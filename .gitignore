@@ -1,6 +1,7 @@
 # phpstorm project files
 .idea
 kladr_db_folder/*
+!kladr_db_folder/.gitignore
 # netbeans project files
 nbproject
 node_modules
