@@ -3,7 +3,6 @@
 
 namespace app\models;
 
-
 use yii\base\Model;
 
 class SearchModel extends Model

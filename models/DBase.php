@@ -4,17 +4,21 @@
 namespace app\models;
 
 
+use Yii;
+
 class DBase
 {
+    //jesus kill the guy named those dbases
     private ?DBaseEntity $base_connection = null;
+
     const CONTAINS = 0;
     const STARTS_WITH = 1;
     const EQUALS = 2;
-    const IN_ARRAY = 3;
+    const SELECT_TYPES = 3;
 
-    public function __construct(string $file)
+    public function __construct(string $filename)
     {
-        $this->load($file);
+        $this->load($filename);
     }
 
     /**
@@ -25,16 +29,15 @@ class DBase
     {
         $result = [];
         foreach ($search_params as $param) {
-            if ($param->mode === self::IN_ARRAY) {
-                //TODO implement in array check
-            } else {
-                $result = $this->base_connection->selectIDsByCondition($param->header_name, $param->string_to_search, $param->mode, $result);
-
-            }
+            $result = $this->base_connection->selectIDsByCondition($param->header_name, $param->string_to_search, $param->mode, $result);
         }
         return $result;
     }
 
+    /**
+     * @param array $ids
+     * @return array
+     */
     public function getRowsByIds(array $ids): array
     {
         $result = [];
@@ -44,22 +47,16 @@ class DBase
         return $result;
     }
 
-    private function load(string $file)
+    private function load(string $filename)
     {
+        $file = $this->makeFullPath($filename);
         $resource = dbase_open($file, 0);
-        $this->base_connection = new DBaseEntity($resource, pathinfo($file, PATHINFO_FILENAME));
+        $this->base_connection = new DBaseEntity($resource, pathinfo($file, PATHINFO_FILENAME), $filename === DBNameConstants::KLADR);
     }
 
-    private function unload()
+    private function makeFullPath(string $filename)
     {
-        if ($this->base_connection) {
-            unset($this->base_connection);
-        }
-    }
-
-    public function __destruct()
-    {
-        $this->unload();
+        return Yii::getAlias('@database') . DIRECTORY_SEPARATOR . $filename;
     }
 
 }
