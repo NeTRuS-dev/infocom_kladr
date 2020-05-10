@@ -111,10 +111,10 @@ class DBaseEntity
             $checking_function = '';
             switch ($searching_mode) {
                 case DBase::CONTAINS:
-                    $checking_function = 'inString';
+                    $checking_function = 'in_string';
                     break;
                 case DBase::STARTS_WITH:
-                    $checking_function = 'startsWith';
+                    $checking_function = 'starts_with';
                     break;
                 case DBase::EQUALS:
                     $checking_function = 'strings_are_equal';
@@ -146,7 +146,7 @@ class DBaseEntity
      * @param string $searching_string
      * @return bool
      */
-    private function startsWith(string $target, string $searching_string): bool
+    private function starts_with(string $target, string $searching_string): bool
     {
         $length = strlen($searching_string);
         return (substr($target, 0, $length) === $searching_string);
@@ -157,7 +157,7 @@ class DBaseEntity
      * @param string $searching_string
      * @return bool
      */
-    private function inString(string $target, string $searching_string): bool
+    private function in_string(string $target, string $searching_string): bool
     {
         return (strpos($target, $searching_string) !== false);
     }
