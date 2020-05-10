@@ -16,7 +16,7 @@ class DBase
     public function load(string $file)
     {
         $resource = dbase_open($file, 0);
-        $this->base_connection = new DBaseEntity($resource);
+        $this->base_connection = new DBaseEntity($resource, pathinfo($file, PATHINFO_FILENAME));
     }
 
     private function unload()
@@ -25,6 +25,12 @@ class DBase
             unset($this->base_connection);
         }
     }
+
+    public function search(array $search_params)
+    {
+
+    }
+
     public function __destruct()
     {
         $this->unload();

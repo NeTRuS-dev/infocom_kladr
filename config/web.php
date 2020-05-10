@@ -43,6 +43,7 @@ $config = [
             'enableStrictParsing' => true,
             'rules' => [
                 'GET /' => 'site/index',
+                'POST ajax/search' => 'site/process-search-request',
             ],
         ],
     ],
