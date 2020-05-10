@@ -33,18 +33,8 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        //4+4+3
-        //street 4
-        //home 2
-        $base = new DBase();
+        $base = new DBase(DBNameConstants::KLADR);
         echo '<pre>';
-        $time_pre = microtime(true);
-        $row = $base->search([new SearchParameter('NAME', 'Адыг', DBase::CONTAINS)]);
-        $time_post = microtime(true);
-        $exec_time = $time_post - $time_pre;
-        VarDumper::dump($row);
-        VarDumper::dump($exec_time);
-        echo '<br>';
         $time_pre = microtime(true);
         $row = $base->search([new SearchParameter('NAME', 'Адыг', DBase::CONTAINS)]);
         $time_post = microtime(true);

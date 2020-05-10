@@ -12,7 +12,9 @@ class SearchModel extends Model
     public string $city = '';
     public string $street = '';
     public string $house = '';
-
+    //4+4+3
+    //street 4
+    //home 2
     public function rules()
     {
         return [

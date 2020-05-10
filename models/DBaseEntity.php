@@ -21,6 +21,13 @@ class DBaseEntity
     private bool $enable_type_caching;
 
     //TODO add memcache
+
+    /**
+     * DBaseEntity constructor.
+     * @param resource $resource
+     * @param string $cache_prefix
+     * @param bool $enable_type_caching
+     */
     public function __construct($resource, string $cache_prefix, bool $enable_type_caching)
     {
         if (!is_resource($resource)) {
@@ -38,10 +45,10 @@ class DBaseEntity
     }
 
     /**
-     * @param $header_number
-     * @return array|null
+     * @param int $header_number
+     * @return string
      */
-    public function getHeader($header_number): ?array
+    public function getHeader($header_number)
     {
         if ($header_number <= count($this->headers))
             return $this->headers[$header_number];
@@ -49,12 +56,12 @@ class DBaseEntity
             return null;
     }
 
-    public function getHeaders(): array
+    public function getHeaders()
     {
         return $this->headers;
     }
 
-    private function setUpHeaders(): void
+    private function setUpHeaders()
     {
         $this->headers = mb_convert_encoding(dbase_get_header_info($this->resource), 'UTF-8', 'CP866');
     }
@@ -63,7 +70,7 @@ class DBaseEntity
      * @param int $record_number
      * @return array|null
      */
-    public function getRecord(int $record_number): ?array
+    public function getRecord($record_number)
     {
         if ($record_number > $this->database_size) {
             return null;
@@ -102,19 +109,11 @@ class DBaseEntity
      * @param string $header_name
      * @param string $searching_string
      * @param int $searching_mode
-     * @param array|null $searching_array
+     * @param int[]|null $searching_array
      * @return int[]|null
      */
-    public function selectIDsByCondition(string $header_name, string $searching_string, int $searching_mode = DBase::CONTAINS, ?array $searching_array = null): ?array
+    public function selectIDsByCondition($header_name, $searching_string, $searching_mode = DBase::CONTAINS, $searching_array = null)
     {
-//        if ($this->cache_storage->exists("{$this->search_cache_name}.{$header_name}.{$searching_mode}.{$searching_string}")) {
-//            $result_arr = $this->cache_storage->get("{$this->search_cache_name}.{$header_name}.{$searching_mode}.{$searching_string}");
-//            if (empty($searching_array)) {
-//                return $result_arr;
-//            } else {
-//                return array_intersect($searching_array, $result_arr);
-//            }
-//        } else {
         $results = [];
         $checking_function = '';
         switch ($searching_mode) {
@@ -142,20 +141,16 @@ class DBaseEntity
                 $results[] = $index;
             }
         }
-//        if ($passed_arr_is_empty && !empty($results)) {
-//            $this->cache_storage->set("{$this->search_cache_name}.{$header_name}.{$searching_mode}.{$searching_string}", $results);
-//        }
         return $results;
-//        }
     }
 
     /**
      * @param string $header_name
      * @param array $values_to_compare
-     * @param int|null $type_number_to_cache
-     * @return array
+     * @param int $type_number_to_cache
+     * @return int[]
      */
-    public function SelectIDsWithGivenType(string $header_name, array $values_to_compare, int $type_number_to_cache)
+    public function SelectIDsWithGivenType($header_name, $values_to_compare, $type_number_to_cache)
     {
         if ($this->cache_storage->exists("{$this->search_cache_name}.{$type_number_to_cache}")) {
             return $this->cache_storage->get("{$this->search_cache_name}.{$type_number_to_cache}");
@@ -179,7 +174,7 @@ class DBaseEntity
      * @param string $searching_string
      * @return bool
      */
-    private function starts_with(string $target, string $searching_string): bool
+    private function starts_with($target, $searching_string)
     {
         $length = strlen($searching_string);
         return (substr($target, 0, $length) === $searching_string);
@@ -190,7 +185,7 @@ class DBaseEntity
      * @param string $searching_string
      * @return bool
      */
-    private function in_string(string $target, string $searching_string): bool
+    private function in_string($target, $searching_string)
     {
         return (strpos($target, $searching_string) !== false);
     }
@@ -200,7 +195,7 @@ class DBaseEntity
      * @param array $searching_type_assoc
      * @return bool
      */
-    private function belongs_to_array(string $target, array $searching_type_assoc): bool
+    private function belongs_to_array($target, $searching_type_assoc)
     {
         foreach ($searching_type_assoc as $item) {
             if ($target === $item['SCNAME']) {
@@ -215,7 +210,7 @@ class DBaseEntity
      * @param string $searching_string
      * @return bool
      */
-    private function strings_are_equal(string $target, string $searching_string): bool
+    private function strings_are_equal($target, $searching_string)
     {
         return ($target === $searching_string);
     }

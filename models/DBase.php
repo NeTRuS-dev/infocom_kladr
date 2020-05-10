@@ -25,20 +25,24 @@ class DBase
      * @param SearchParameter[] $search_params
      * @return int[]
      */
-    public function search(array $search_params): array
+    public function search($search_params)
     {
         $result = [];
         foreach ($search_params as $param) {
-            $result = $this->base_connection->selectIDsByCondition($param->header_name, $param->string_to_search, $param->mode, $result);
+            if ($param->mode === DBase::SELECT_TYPES) {
+                $result = $this->base_connection->SelectIDsWithGivenType($param->header_name, $param->to_search, $param->level_type);
+            } else {
+                $result = $this->base_connection->selectIDsByCondition($param->header_name, $param->to_search, $param->mode, $result);
+            }
         }
         return $result;
     }
 
     /**
-     * @param array $ids
+     * @param int[] $ids
      * @return array
      */
-    public function getRowsByIds(array $ids): array
+    public function getRowsByIds($ids)
     {
         $result = [];
         foreach ($ids as $id) {
@@ -47,14 +51,21 @@ class DBase
         return $result;
     }
 
-    private function load(string $filename)
+    /**
+     * @param string $filename
+     */
+    private function load($filename)
     {
         $file = $this->makeFullPath($filename);
         $resource = dbase_open($file, 0);
         $this->base_connection = new DBaseEntity($resource, pathinfo($file, PATHINFO_FILENAME), $filename === DBNameConstants::KLADR);
     }
 
-    private function makeFullPath(string $filename)
+    /**
+     * @param string $filename
+     * @return string
+     */
+    private function makeFullPath($filename)
     {
         return Yii::getAlias('@database') . DIRECTORY_SEPARATOR . $filename;
     }
