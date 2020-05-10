@@ -75,8 +75,9 @@ class DBaseEntity
         if ($record_number > $this->database_size) {
             return null;
         } else {
-            if ($this->cache_storage->exists("{$this->cached_data_name}.{$record_number}")) {
-                return $this->cache_storage->get("{$this->cached_data_name}.{$record_number}");
+            $data_from_cache = $this->cache_storage->get("{$this->cached_data_name}.{$record_number}");
+            if ($data_from_cache) {
+                return $data_from_cache;
             } else {
                 /** @var array $record */
                 $record = array_map('rtrim', mb_convert_encoding(dbase_get_record_with_names($this->resource, $record_number), 'UTF-8', 'CP866'));
@@ -152,8 +153,9 @@ class DBaseEntity
      */
     public function SelectIDsWithGivenType($header_name, $values_to_compare, $type_number_to_cache)
     {
-        if ($this->cache_storage->exists("{$this->search_cache_name}.{$type_number_to_cache}")) {
-            return $this->cache_storage->get("{$this->search_cache_name}.{$type_number_to_cache}");
+        $data_from_cache = $this->cache_storage->get("{$this->search_cache_name}.{$type_number_to_cache}");
+        if ($data_from_cache) {
+            return $data_from_cache;
         } else {
             $results = [];
             for ($i = 1; $i < $this->database_size; $i++) {
