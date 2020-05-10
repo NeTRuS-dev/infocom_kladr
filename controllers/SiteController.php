@@ -3,7 +3,9 @@
 namespace app\controllers;
 
 use app\models\DBase;
-use app\models\DBConstants;
+use app\models\DBNameConstants;
+use app\models\SearchModel;
+use app\models\SearchParameter;
 use Yii;
 use yii\helpers\VarDumper;
 use yii\web\Controller;
@@ -34,17 +36,17 @@ class SiteController extends Controller
         //4+4+3
         //street 4
         //home 2
-        $base = new DBase(Yii::getAlias('@database') . DIRECTORY_SEPARATOR . DBConstants::KLADR);
+        $base = new DBase(Yii::getAlias('@database') . DIRECTORY_SEPARATOR . DBNameConstants::KLADR);
         echo '<pre>';
         $time_pre = microtime(true);
-        $row = $base->base_connection->selectIDsByCondition('NAME', 'Адыг');
+        $row = $base->search([new SearchParameter('NAME', 'Адыг',DBase::CONTAINS)]);
         $time_post = microtime(true);
         $exec_time = $time_post - $time_pre;
         VarDumper::dump($row);
         VarDumper::dump($exec_time);
         echo '<br>';
         $time_pre = microtime(true);
-        $row = $base->base_connection->selectIDsByCondition('NAME', 'Адыг');
+        $row = $base->search([new SearchParameter('NAME', 'Адыг',DBase::CONTAINS)]);
         $time_post = microtime(true);
         $exec_time = $time_post - $time_pre;
         VarDumper::dump($row);
@@ -56,6 +58,11 @@ class SiteController extends Controller
 
     public function actionProcessSearchRequest()
     {
-        //TODO trim params
+        $query = new SearchModel();
+        if ($query->load(Yii::$app->request->post()) && $query->validate()) {
+
+        } else {
+
+        }
     }
 }

@@ -104,8 +104,13 @@ class DBaseEntity
      */
     public function selectIDsByCondition(string $header_name, string $searching_string, int $searching_mode = DBase::CONTAINS, ?array $searching_array = null): ?array
     {
-        if ($this->cache_storage->exists("{$this->search_cache_name}.{$header_name}.{$searching_string}")) {
-            return $this->cache_storage->get("{$this->search_cache_name}.{$header_name}.{$searching_string}");
+        if ($this->cache_storage->exists("{$this->search_cache_name}.{$header_name}.{$searching_mode}.{$searching_string}")) {
+            $result_arr = $this->cache_storage->get("{$this->search_cache_name}.{$header_name}.{$searching_mode}.{$searching_string}");
+            if (empty($searching_array)) {
+                return $result_arr;
+            } else {
+                return array_intersect($searching_array, $result_arr);
+            }
         } else {
             $results = [];
             $checking_function = '';
@@ -135,7 +140,7 @@ class DBaseEntity
                 }
             }
             if ($passed_arr_is_empty && !empty($results)) {
-                $this->cache_storage->set("{$this->search_cache_name}.{$header_name}.{$searching_string}", $results);
+                $this->cache_storage->set("{$this->search_cache_name}.{$header_name}.{$searching_mode}.{$searching_string}", $results);
             }
             return $results;
         }

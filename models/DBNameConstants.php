@@ -4,7 +4,7 @@
 namespace app\models;
 
 
-class DBConstants
+class DBNameConstants
 {
     const ALTNAMES='ALTNAMES.dbf';
     const DOMA='DOMA.dbf';
