@@ -7,6 +7,9 @@ namespace app\models;
 class DBase
 {
     public ?DBaseEntity $base_connection = null;
+    const CONTAINS = 0;
+    const STARTS_WITH = 1;
+    const EQUALS = 2;
 
     public function __construct(string $file)
     {

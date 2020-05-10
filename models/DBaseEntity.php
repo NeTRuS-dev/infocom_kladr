@@ -98,17 +98,28 @@ class DBaseEntity
     /**
      * @param string $header_name
      * @param string $searching_string
-     * @param bool $search_only_in_the_beginning
+     * @param int $searching_mode
      * @param array|null $searching_array
      * @return int[]|null
      */
-    public function selectIDsByCondition(string $header_name, string $searching_string, bool $search_only_in_the_beginning = false, ?array $searching_array = null): ?array
+    public function selectIDsByCondition(string $header_name, string $searching_string, int $searching_mode = DBase::CONTAINS, ?array $searching_array = null): ?array
     {
         if ($this->cache_storage->exists("{$this->search_cache_name}.{$header_name}.{$searching_string}")) {
             return $this->cache_storage->get("{$this->search_cache_name}.{$header_name}.{$searching_string}");
         } else {
             $results = [];
-            $checking_function = ($search_only_in_the_beginning ? 'startsWith' : 'inString');
+            $checking_function = '';
+            switch ($searching_mode) {
+                case DBase::CONTAINS:
+                    $checking_function = 'inString';
+                    break;
+                case DBase::STARTS_WITH:
+                    $checking_function = 'startsWith';
+                    break;
+                case DBase::EQUALS:
+                    $checking_function = 'strings_are_equal';
+                    break;
+            }
             $size = $this->database_size;
             $start_index = 1;
             $passed_arr_is_empty = empty($searching_array);
@@ -149,6 +160,16 @@ class DBaseEntity
     private function inString(string $target, string $searching_string): bool
     {
         return (strpos($target, $searching_string) !== false);
+    }
+
+    /**
+     * @param string $target
+     * @param string $searching_string
+     * @return bool
+     */
+    private function strings_are_equal(string $target, string $searching_string): bool
+    {
+        return ($target === $searching_string);
     }
 
     public function __destruct()

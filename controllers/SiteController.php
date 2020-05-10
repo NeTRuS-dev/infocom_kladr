@@ -56,6 +56,6 @@ class SiteController extends Controller
 
     public function actionProcessSearchRequest()
     {
-
+        //TODO trim params
     }
 }
