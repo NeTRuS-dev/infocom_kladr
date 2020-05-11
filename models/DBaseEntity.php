@@ -138,7 +138,7 @@ class DBaseEntity
         for ($i = $start_index; $i < $size; $i++) {
             $index = ($passed_arr_is_empty ? $i : $searching_array[$i]);
             $record = $this->getRecord($index);
-            if (call_user_func([$this, $checking_function], trim($record[$header_name]), $searching_string)) {
+            if (call_user_func([$this, $checking_function], $record[$header_name], $searching_string)) {
                 $results[] = $index;
             }
         }
@@ -160,14 +160,14 @@ class DBaseEntity
             $results = [];
             for ($i = 1; $i < $this->database_size; $i++) {
                 $record = $this->getRecord($i);
-                if ($this->belongs_to_array(trim($record[$header_name]), $values_to_compare)) {
+                if ($this->belongs_to_array($record[$header_name], $values_to_compare)) {
                     $results[] = $i;
                 }
-                if ($this->enable_type_caching) {
-                    $this->cache_storage->set("{$this->search_cache_name}.{$type_number_to_cache}", $results);
-                }
-                return $results;
             }
+            if ($this->enable_type_caching) {
+                $this->cache_storage->set("{$this->search_cache_name}.{$type_number_to_cache}", $results);
+            }
+            return $results;
         }
     }
 
