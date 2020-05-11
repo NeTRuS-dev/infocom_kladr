@@ -168,37 +168,6 @@ class DBaseEntity
 
     /**
      * @param string $target
-     * @param string $searching_string
-     * @return bool
-     */
-    private function starts_with($target, $searching_string)
-    {
-        $length = strlen($searching_string);
-        return (substr($target, 0, $length) == $searching_string);
-    }
-
-    /**
-     * @param string $target
-     * @param string $searching_string
-     * @return bool
-     */
-    private function in_string($target, $searching_string)
-    {
-        return (strpos($target, $searching_string) !== false);
-    }
-
-    /**
-     * @param string $target
-     * @param string $searching_string
-     * @return bool
-     */
-    private function strings_are_equal($target, $searching_string)
-    {
-        return ($target == $searching_string);
-    }
-
-    /**
-     * @param string $target
      * @param string $header_in_values
      * @param array $searching_assoc_array
      * @param int $checking_type
