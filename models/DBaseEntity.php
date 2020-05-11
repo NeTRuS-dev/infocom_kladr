@@ -15,29 +15,23 @@ class DBaseEntity
     private $resource;
     private int $database_size;
     private array $headers;
-    private string $cached_data_name;
-    private string $search_cache_name;
-    private CacheInterface $cache_storage;
+    private array $cached_data;
+    private array $search_cache;
     private bool $enable_type_caching;
-
-    //TODO add memcache
 
     /**
      * DBaseEntity constructor.
      * @param resource $resource
-     * @param string $cache_prefix
      * @param bool $enable_type_caching
      */
-    public function __construct($resource, string $cache_prefix, bool $enable_type_caching)
+    public function __construct($resource, bool $enable_type_caching)
     {
         if (!is_resource($resource)) {
             return;
         }
-        $cache_prefix = strtolower($cache_prefix);
         $this->headers = [];
-        $this->cached_data_name = $cache_prefix . '_cached_data';
-        $this->search_cache_name = $cache_prefix . '_search_cache';
-        $this->cache_storage = Yii::$app->cache;
+        $this->cached_data = [];
+        $this->search_cache = [];
         $this->resource = $resource;
         $this->setUpHeaders();
         $this->database_size = dbase_numrecords($this->resource);
@@ -75,13 +69,12 @@ class DBaseEntity
         if ($record_number > $this->database_size) {
             return null;
         } else {
-            $data_from_cache = $this->cache_storage->get("{$this->cached_data_name}.{$record_number}");
-            if ($data_from_cache) {
-                return $data_from_cache;
+            if (array_key_exists($record_number, $this->cached_data)) {
+                return $this->cached_data[$record_number];
             } else {
                 /** @var array $record */
                 $record = array_map('rtrim', mb_convert_encoding(dbase_get_record_with_names($this->resource, $record_number), 'UTF-8', 'CP866'));
-                $this->cache_storage->set("{$this->cached_data_name}.{$record_number}", $record);
+                $this->cached_data[$record_number] = $record;
                 return $record;
             }
         }
@@ -113,18 +106,18 @@ class DBaseEntity
      * @param int[]|null $searching_array
      * @return int[]|null
      */
-    public function selectIDsByCondition($header_name, $searching_string, $searching_mode = DBase::CONTAINS, $searching_array = null)
+    public function selectIDsByCondition($header_name, $searching_string, $searching_mode, $searching_array = null)
     {
         $results = [];
         $checking_function = '';
         switch ($searching_mode) {
-            case DBase::CONTAINS:
+            case DBase::STR_CONTAINS:
                 $checking_function = 'in_string';
                 break;
-            case DBase::STARTS_WITH:
+            case DBase::STR_STARTS_WITH:
                 $checking_function = 'starts_with';
                 break;
-            case DBase::EQUALS:
+            case DBase::STR_EQUALS:
                 $checking_function = 'strings_are_equal';
                 break;
         }
@@ -146,29 +139,31 @@ class DBaseEntity
     }
 
     /**
-     * @param string $header_name
+     * @param string $header_in_db_name
+     * @param string $header_in_values
      * @param array $values_to_compare
-     * @param int $type_number_to_cache
+     * @param int $comparing_mode
+     * @param int[]|null $searching_array
      * @return int[]
      */
-    public function SelectIDsWithGivenType($header_name, $values_to_compare, $type_number_to_cache)
+    public function SelectIDsWithValueInArray($header_in_db_name, $header_in_values, $values_to_compare, $comparing_mode, $searching_array = null)
     {
-        $data_from_cache = $this->cache_storage->get("{$this->search_cache_name}.{$type_number_to_cache}");
-        if ($data_from_cache) {
-            return $data_from_cache;
-        } else {
-            $results = [];
-            for ($i = 1; $i < $this->database_size; $i++) {
-                $record = $this->getRecord($i);
-                if ($this->belongs_to_array($record[$header_name], $values_to_compare)) {
-                    $results[] = $i;
-                }
-            }
-            if ($this->enable_type_caching) {
-                $this->cache_storage->set("{$this->search_cache_name}.{$type_number_to_cache}", $results);
-            }
-            return $results;
+        $results = [];
+        $size = $this->database_size;
+        $start_index = 1;
+        $passed_arr_is_empty = empty($searching_array);
+        if (!$passed_arr_is_empty) {
+            $size = count($searching_array);
+            $start_index = 0;
         }
+        for ($i = $start_index; $i < $size; $i++) {
+            $index = ($passed_arr_is_empty ? $i : $searching_array[$i]);
+            $record = $this->getRecord($index);
+            if ($this->belongs_to_array($record[$header_in_db_name], $header_in_values, $values_to_compare, $comparing_mode)) {
+                $results[] = $index;
+            }
+        }
+        return $results;
     }
 
     /**
@@ -179,7 +174,7 @@ class DBaseEntity
     private function starts_with($target, $searching_string)
     {
         $length = strlen($searching_string);
-        return (substr($target, 0, $length) === $searching_string);
+        return (substr($target, 0, $length) == $searching_string);
     }
 
     /**
@@ -194,28 +189,43 @@ class DBaseEntity
 
     /**
      * @param string $target
-     * @param array $searching_type_assoc
+     * @param string $searching_string
      * @return bool
      */
-    private function belongs_to_array($target, $searching_type_assoc)
+    private function strings_are_equal($target, $searching_string)
     {
-        foreach ($searching_type_assoc as $item) {
-            if ($target === $item['SCNAME']) {
+        return ($target == $searching_string);
+    }
+
+    /**
+     * @param string $target
+     * @param string $header_in_values
+     * @param array $searching_assoc_array
+     * @param int $checking_type
+     * @return bool
+     */
+    private function belongs_to_array($target, $header_in_values, $searching_assoc_array, $checking_type)
+    {
+        $checking_function = '';
+        switch ($checking_type) {
+            case DBase::IN_ARRAY_CONTAINS:
+                $checking_function = 'in_string';
+                break;
+            case DBase::IN_ARRAY_STARTS_WITH:
+                $checking_function = 'starts_with';
+                break;
+            case DBase::IN_ARRAY_EQUALS:
+                $checking_function = 'strings_are_equal';
+                break;
+        }
+        foreach ($searching_assoc_array as $item) {
+            if (call_user_func([$this, $checking_function], $target, $item[$header_in_values])) {
                 return true;
             }
         }
         return false;
     }
 
-    /**
-     * @param string $target
-     * @param string $searching_string
-     * @return bool
-     */
-    private function strings_are_equal($target, $searching_string)
-    {
-        return ($target === $searching_string);
-    }
 
     public function __destruct()
     {

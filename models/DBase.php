@@ -11,10 +11,13 @@ class DBase
     //jesus kill the guy named those dbases
     private ?DBaseEntity $base_connection = null;
 
-    const CONTAINS = 0;
-    const STARTS_WITH = 1;
-    const EQUALS = 2;
-    const SELECT_TYPES = 3;
+    const STR_CONTAINS = 0;
+    const STR_STARTS_WITH = 1;
+    const STR_EQUALS = 2;
+
+    const IN_ARRAY_CONTAINS = 3;
+    const IN_ARRAY_STARTS_WITH = 4;
+    const IN_ARRAY_EQUALS = 5;
 
     public function __construct(string $filename)
     {
@@ -29,10 +32,10 @@ class DBase
     {
         $result = [];
         foreach ($search_params as $param) {
-            if ($param->mode === DBase::SELECT_TYPES) {
-                $result = $this->base_connection->SelectIDsWithGivenType($param->header_name, $param->to_search, $param->level_type);
+            if ($param->mode >= 3) {
+                $result = $this->base_connection->SelectIDsWithValueInArray($param->header_name, $param->header_in_array_name, $param->to_search, $param->mode, (empty($param->array_for_search) ? $result : $param->array_for_search));
             } else {
-                $result = $this->base_connection->selectIDsByCondition($param->header_name, $param->to_search, $param->mode, $result);
+                $result = $this->base_connection->selectIDsByCondition($param->header_name, $param->to_search, $param->mode, (empty($param->array_for_search) ? $result : $param->array_for_search));
             }
         }
         return $result;
@@ -46,9 +49,18 @@ class DBase
     {
         $result = [];
         foreach ($ids as $id) {
-            $result[] = $this->base_connection->getRecord($id);
+            $result[] = $this->getItemById($id);
         }
         return $result;
+    }
+
+    /**
+     * @param int $id
+     * @return array|null
+     */
+    public function getItemById($id)
+    {
+        return $this->base_connection->getRecord($id);
     }
 
     /**
@@ -58,7 +70,8 @@ class DBase
     {
         $file = $this->makeFullPath($filename);
         $resource = dbase_open($file, 0);
-        $this->base_connection = new DBaseEntity($resource, pathinfo($file, PATHINFO_FILENAME), $filename === DBNameConstants::KLADR);
+//        $this->base_connection = new DBaseEntity($resource, $filename === DBNameConstants::KLADR);
+        $this->base_connection = new DBaseEntity($resource, true);
     }
 
     /**
