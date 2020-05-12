@@ -2,10 +2,14 @@
 
 namespace app\controllers;
 
+use app\models\checkers\ContainsStringChecker;
+use app\models\checkers\EqualToAnyRowOfArrayChecker;
+use app\models\checkers\EqualToStringChecker;
 use app\models\DBase;
 use app\models\DBNameConstants;
 use app\models\SearchModel;
 use app\models\SearchParameter;
+use app\models\SubjectTypes;
 use Yii;
 use yii\helpers\VarDumper;
 use yii\web\Controller;
@@ -36,8 +40,14 @@ class SiteController extends Controller
         $base = new DBase(DBNameConstants::KLADR);
         echo '<pre>';
         $result_query = [];
-        $result_query[] = new SearchParameter('SOCR', DBase::IN_ARRAY, $this->getTypes(1), 'SCNAME');
-        $result_query[] = new SearchParameter('NAME', DBase::STR_CONTAINS, 'Дагест');
+        $result_query[] = new SearchParameter(
+            new EqualToAnyRowOfArrayChecker(
+                'SOCR',
+                $this->getTypes(SubjectTypes::AREA),
+                'SCNAME'));
+        $result_query[] = new SearchParameter(
+            new ContainsStringChecker('NAME', 'Дагест'),
+        );
         $row = $base->search($result_query);
         VarDumper::dump($base->getRowsByIds($row));
         echo '</pre>';
@@ -49,7 +59,7 @@ class SiteController extends Controller
     private function getTypes(int $type)
     {
         $base = new DBase(DBNameConstants::SOCRBASE);
-        $result = $base->search([new SearchParameter('LEVEL', DBase::STR_EQUALS, "$type")]);
+        $result = $base->search([new SearchParameter(new EqualToStringChecker('LEVEL', "$type"))]);
         return $base->getRowsByIds($result);
     }
 

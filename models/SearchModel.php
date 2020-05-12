@@ -3,6 +3,9 @@
 
 namespace app\models;
 
+use app\models\checkers\ContainsStringChecker;
+use app\models\checkers\EqualToAnyRowOfArrayChecker;
+use app\models\checkers\EqualToStringChecker;
 use yii\base\Model;
 
 class SearchModel extends Model
@@ -44,23 +47,30 @@ class SearchModel extends Model
         $query_result = [];
         if (!empty($this->area)) {
             //TODO possible cache type searching
-            $built_query[] = new SearchParameter('SOCR', DBase::IN_ARRAY_EQUALS, $this->getTypes(SubjectTypes::AREA), 'SCNAME');
+            $built_query[] = new SearchParameter(
+                new EqualToAnyRowOfArrayChecker(
+                    'SOCR',
+                    $this->getTypes(SubjectTypes::AREA),
+                    'SCNAME'));
             //
-            $built_query[] = new SearchParameter('NAME', DBase::STR_CONTAINS, $this->area);
+            $built_query[] = new SearchParameter(
+                new ContainsStringChecker('NAME', $this->area),
+            );
             $query_result = $this->KLADR->search($built_query);
             $built_query = [];
 
         }
         if (!empty($this->district)) {
             //TODO possible cache type searching
-            $built_query[] = new SearchParameter('SOCR', DBase::IN_ARRAY_EQUALS, $this->getTypes(SubjectTypes::DISTRICT), 'SCNAME');
+            //getting all districts
+            $built_query[] = new SearchParameter(new EqualToAnyRowOfArrayChecker('SOCR', $this->getTypes(SubjectTypes::DISTRICT), 'SCNAME'));
             $tmp_result = $this->KLADR->search($built_query); //add districts
             $built_query = [];
             //
-            $built_query[] = new SearchParameter('SOCR', DBase::IN_ARRAY_EQUALS, $this->getTypes(SubjectTypes::DISTRICT), 'SCNAME');
-
-
-            $built_query[] = new SearchParameter('NAME', DBase::STR_CONTAINS, $this->district);
+            //if isset area index after first found area
+            $start_index = 1;
+            //getting searched distr from those in area
+            $built_query[] = new SearchParameter(new ContainsStringChecker('NAME', $this->district), $start_index);
 
         }
     }
@@ -68,7 +78,7 @@ class SearchModel extends Model
     private function getTypes(int $type)
     {
         //TODO possible caching
-        $result = $this->SOCRBASE->search([new SearchParameter('LEVEL', DBase::STR_EQUALS, "$type")]);
+        $result = $this->SOCRBASE->search([new SearchParameter(new EqualToStringChecker('LEVEL', "$type"))]);
         return $this->SOCRBASE->getRowsByIds($result);
     }
 

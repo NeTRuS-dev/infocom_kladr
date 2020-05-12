@@ -18,7 +18,7 @@ class SearchParameter
      * @param int $start_index
      * @param array $array_for_search
      */
-    public function __construct($checker, $start_index, $array_for_search = [])
+    public function __construct($checker, $start_index = 1, $array_for_search = [])
     {
         $this->checker = $checker;
         $this->array_for_search = $array_for_search;

@@ -104,7 +104,7 @@ class DBaseEntity
      * @param int[]|null $searching_array
      * @return int[]|null
      */
-    public function selectIDsByCondition($checker, $start_index = 1, $searching_array = null)
+    public function selectIDsByCondition($checker, $start_index, $searching_array = null)
     {
         $results = [];
         $size = $this->database_size;
