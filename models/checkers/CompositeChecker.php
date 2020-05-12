@@ -24,6 +24,7 @@ class CompositeChecker extends AbstractChecker
     {
         foreach ($this->checkers as $checker) {
             if (!($checker->check($row_to_check))) {
+                $this->searching_is_pointless = $checker->searching_is_pointless;
                 return false;
             }
         }

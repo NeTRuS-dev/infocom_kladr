@@ -40,6 +40,7 @@ class SiteController extends Controller
         $search=new SearchModel();
         $search->area='Ставрополь';
         $search->district='Изоб';
+        $search->city='Солне';
         $row=$search->parseSearch();
         echo '<pre>';
         VarDumper::dump($row);

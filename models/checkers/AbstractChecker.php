@@ -6,6 +6,8 @@ namespace app\models\checkers;
 
 abstract class AbstractChecker
 {
+    public bool $searching_is_pointless = false;
+
     /**
      * @param array $row_to_check
      * @return bool

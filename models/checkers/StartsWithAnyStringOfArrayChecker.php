@@ -11,4 +11,5 @@ class StartsWithAnyStringOfArrayChecker extends AbstractArrayChecker
     {
         return 'starts_with';
     }
+
 }

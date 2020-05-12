@@ -122,6 +122,8 @@ class DBaseEntity
             $record = $this->getRecord($index);
             if ($checker->check($record)) {
                 $results[] = $index;
+            } else if ($checker->searching_is_pointless) {
+                break;
             }
         }
         return $results;
