@@ -52,7 +52,7 @@ class SiteController extends Controller
     private function getTypes(int $type)
     {
         $base = new DBase(DBNameConstants::SOCRBASE);
-        $result = $base->search([new SearchParameter(new EqualToStringChecker('LEVEL', "$type"))]);
+        $result = $base->execQuery([new SearchParameter(new EqualToStringChecker('LEVEL', "$type"))]);
         return $base->getRowsByIds($result);
     }
 

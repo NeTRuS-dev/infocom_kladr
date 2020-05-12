@@ -20,7 +20,7 @@ class DBase
      * @param SearchParameter[] $search_params
      * @return int[]
      */
-    public function search($search_params)
+    public function execQuery($search_params)
     {
         $result = [];
         foreach ($search_params as $param) {
