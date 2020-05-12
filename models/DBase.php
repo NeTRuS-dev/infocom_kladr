@@ -32,11 +32,7 @@ class DBase
     {
         $result = [];
         foreach ($search_params as $param) {
-            if ($param->mode >= 3) {
-                $result = $this->base_connection->SelectIDsWithValueInArray($param->header_name, $param->header_in_array_name, $param->to_search, $param->mode, (empty($param->array_for_search) ? $result : $param->array_for_search));
-            } else {
-                $result = $this->base_connection->selectIDsByCondition($param->header_name, $param->to_search, $param->mode, (empty($param->array_for_search) ? $result : $param->array_for_search));
-            }
+            $result = $this->base_connection->selectIDsByCondition($param->checker, $param->start_index, (empty($param->array_for_search) ? $result : $param->array_for_search));
         }
         return $result;
     }
