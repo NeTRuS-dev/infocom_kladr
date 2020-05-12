@@ -14,6 +14,7 @@ class DBaseEntity
      * @var resource $resource
      */
     private $resource;
+    private string $cache_prefix;
     private int $database_size;
     private array $headers;
     private array $cached_data;
@@ -22,8 +23,9 @@ class DBaseEntity
     /**
      * DBaseEntity constructor.
      * @param resource $resource
+     * @param $cache_prefix
      */
-    public function __construct($resource)
+    public function __construct($resource, $cache_prefix)
     {
         if (!is_resource($resource)) {
             return;
@@ -34,6 +36,7 @@ class DBaseEntity
         $this->resource = $resource;
         $this->setUpHeaders();
         $this->database_size = dbase_numrecords($this->resource);
+        $this->cache_prefix = $cache_prefix;
     }
 
     /**

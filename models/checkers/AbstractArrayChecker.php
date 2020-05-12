@@ -9,6 +9,7 @@ abstract class AbstractArrayChecker extends AbstractChecker
     public array $array_with_samples;
     public string $sample_header;
     public string $checking_header;
+    protected int $last_checking_array_index;
 
     /**
      * @param string $checking_header
@@ -20,6 +21,7 @@ abstract class AbstractArrayChecker extends AbstractChecker
         $this->array_with_samples = $array_with_samples;
         $this->checking_header = $checking_header;
         $this->sample_header = $sample_header;
+        $this->last_checking_array_index = count($array_with_samples) - 1;
     }
 
     /**
@@ -28,9 +30,9 @@ abstract class AbstractArrayChecker extends AbstractChecker
     public function check($row_to_check)
     {
         $checking_value = $row_to_check[$this->checking_header];
-        foreach ($this->array_with_samples as $sample) {
+        foreach ($this->array_with_samples as $index => $sample) {
             if (call_user_func([$this, $this->getCheckingFunction()], $checking_value, $sample[$this->sample_header])) {
-                $this->pointlessChecker(true);
+                $this->pointlessChecker($this->last_checking_array_index == $index);
                 return true;
             }
         }

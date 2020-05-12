@@ -58,7 +58,7 @@ class DBase
     {
         $file = $this->makeFullPath($filename);
         $resource = dbase_open($file, 0);
-        $this->base_connection = new DBaseEntity($resource);
+        $this->base_connection = new DBaseEntity($resource, pathinfo($file, PATHINFO_FILENAME));
     }
 
     /**

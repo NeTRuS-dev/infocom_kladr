@@ -1,5 +1,4 @@
 <?php
-
 namespace app\controllers;
 
 use app\models\checkers\ContainsStringChecker;
@@ -37,11 +36,14 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
+        set_time_limit(0);
+
         $search=new SearchModel();
-//        $search->area='Ставрополь';
+        $search->area='Ставрополь';
         $search->district='Изоб';
         $search->city='Солне';
         $search->street='Школь';
+        $search->house='5';
         $row=$search->parseSearch();
         echo '<pre>';
         VarDumper::dump($row);
@@ -50,16 +52,10 @@ class SiteController extends Controller
         return $this->render('index');
     }
 
-    //TODO remove this
-    private function getTypes(int $type)
-    {
-        $base = new DBase(DBNameConstants::SOCRBASE);
-        $result = $base->execQuery([new SearchParameter(new EqualToStringChecker('LEVEL', "$type"))]);
-        return $base->getRowsByIds($result);
-    }
-
     public function actionProcessSearchRequest()
     {
+        set_time_limit(0);
+
         $query = new SearchModel();
         if ($query->load(Yii::$app->request->post()) && $query->validate()) {
 
