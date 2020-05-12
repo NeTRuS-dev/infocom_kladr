@@ -37,19 +37,12 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        $base = new DBase(DBNameConstants::KLADR);
+        $search=new SearchModel();
+        $search->area='Ставрополь';
+        $search->district='Изоб';
+        $row=$search->parseSearch();
         echo '<pre>';
-        $result_query = [];
-        $result_query[] = new SearchParameter(
-            new EqualToAnyRowOfArrayChecker(
-                'SOCR',
-                $this->getTypes(SubjectTypes::AREA),
-                'SCNAME'));
-        $result_query[] = new SearchParameter(
-            new ContainsStringChecker('NAME', 'Дагест'),
-        );
-        $row = $base->search($result_query);
-        VarDumper::dump($base->getRowsByIds($row));
+        VarDumper::dump($row);
         echo '</pre>';
         die();
         return $this->render('index');

@@ -6,6 +6,7 @@ namespace app\models;
 use app\models\checkers\ContainsStringChecker;
 use app\models\checkers\EqualToAnyRowOfArrayChecker;
 use app\models\checkers\EqualToStringChecker;
+use app\models\checkers\StartsWithAnyStringOfArrayChecker;
 use yii\base\Model;
 
 class SearchModel extends Model
@@ -34,7 +35,8 @@ class SearchModel extends Model
     public function rules()
     {
         return [
-            [['area', 'district', 'city', 'street', 'house'], 'trim'],
+            [['area', 'district'], 'trim'],
+//            [['area', 'district', 'city', 'street', 'house'], 'trim'],
             ['district', 'required', 'when' => function ($model) {
                 return empty($model->area);
             }],
@@ -45,6 +47,7 @@ class SearchModel extends Model
     {
         $built_query = [];
         $query_result = [];
+        //searching for area
         if (!empty($this->area)) {
             //TODO possible cache type searching
             $built_query[] = new SearchParameter(
@@ -60,19 +63,42 @@ class SearchModel extends Model
             $built_query = [];
 
         }
+        //searching for district
         if (!empty($this->district)) {
+            $allowed_code_begins = null;
+            $start_index = 1;
+
+            if (!empty($this->area) && !empty($query_result)) {
+                $allowed_code_begins = $this->generateAllowedCodesArray($this->KLADR->getRowsByIds($query_result), SubjectTypes::AREA);
+                $start_index = $query_result[0];
+            }
             //TODO possible cache type searching
             //getting all districts
             $built_query[] = new SearchParameter(new EqualToAnyRowOfArrayChecker('SOCR', $this->getTypes(SubjectTypes::DISTRICT), 'SCNAME'));
-            $tmp_result = $this->KLADR->search($built_query); //add districts
+            $query_result = $this->KLADR->search($built_query); //add districts
             $built_query = [];
+            $make_clear_query = true;
+            if (!is_null($allowed_code_begins)) {
+                $make_clear_query = false;
+                $built_query[] = new SearchParameter(new StartsWithAnyStringOfArrayChecker('CODE', $allowed_code_begins, 'CODE'), $start_index, $query_result);
+
+            }
             //
             //if isset area index after first found area
-            $start_index = 1;
             //getting searched distr from those in area
-            $built_query[] = new SearchParameter(new ContainsStringChecker('NAME', $this->district), $start_index);
+            if ($make_clear_query) {
+                $built_query[] = new SearchParameter(new ContainsStringChecker('NAME', $this->district), $start_index, $query_result);
 
+            } else {
+                $built_query[] = new SearchParameter(new ContainsStringChecker('NAME', $this->district), $start_index);
+
+            }
+            $query_result = $this->KLADR->search($built_query);
+            $built_query = [];
         }
+
+
+        return $this->KLADR->getRowsByIds($query_result);
     }
 
     private function getTypes(int $type)
@@ -96,20 +122,20 @@ class SearchModel extends Model
         $slice_length = 0;
         switch ($type) {
             case SubjectTypes::AREA:
-                $slice_length = 4;
+                $slice_length = 2;
                 break;
             case SubjectTypes::DISTRICT:
-                $slice_length = 8;
+                $slice_length = 4;
                 break;
             case SubjectTypes::CITY:
             case SubjectTypes::SMALL_TER:
-                $slice_length = 11;
+                $slice_length = 8;
                 break;
             case SubjectTypes::STREET:
-                $slice_length = 15;
+                $slice_length = 11;
                 break;
             case SubjectTypes::HOUSE:
-                $slice_length = 17;
+                $slice_length = 15;
                 break;
         }
         return mb_substr($row[$header_name], 0, $slice_length);
@@ -126,6 +152,6 @@ class SearchModel extends Model
         foreach ($array_to_allow as $item) {
             $result[] = ['CODE' => $this->getCodeSlice($item, $array_level)];
         }
-        return $result;
+        return array_unique($result);
     }
 }
