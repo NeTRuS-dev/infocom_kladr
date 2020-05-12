@@ -11,14 +11,6 @@ class DBase
     //jesus kill the guy named those dbases
     private ?DBaseEntity $base_connection = null;
 
-    const STR_CONTAINS = 0;
-    const STR_STARTS_WITH = 1;
-    const STR_EQUALS = 2;
-
-    const IN_ARRAY_CONTAINS = 3;
-    const IN_ARRAY_STARTS_WITH = 4;
-    const IN_ARRAY_EQUALS = 5;
-
     public function __construct(string $filename)
     {
         $this->load($filename);
@@ -66,8 +58,7 @@ class DBase
     {
         $file = $this->makeFullPath($filename);
         $resource = dbase_open($file, 0);
-//        $this->base_connection = new DBaseEntity($resource, $filename === DBNameConstants::KLADR);
-        $this->base_connection = new DBaseEntity($resource, true);
+        $this->base_connection = new DBaseEntity($resource);
     }
 
     /**

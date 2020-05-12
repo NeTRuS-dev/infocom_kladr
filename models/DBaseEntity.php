@@ -18,14 +18,12 @@ class DBaseEntity
     private array $headers;
     private array $cached_data;
     private array $search_cache;
-    private bool $enable_type_caching;
 
     /**
      * DBaseEntity constructor.
      * @param resource $resource
-     * @param bool $enable_type_caching
      */
-    public function __construct($resource, bool $enable_type_caching)
+    public function __construct($resource)
     {
         if (!is_resource($resource)) {
             return;
@@ -36,7 +34,6 @@ class DBaseEntity
         $this->resource = $resource;
         $this->setUpHeaders();
         $this->database_size = dbase_numrecords($this->resource);
-        $this->enable_type_caching = $enable_type_caching;
     }
 
     /**
@@ -89,7 +86,7 @@ class DBaseEntity
     public function getHeaderNumber(string $header_text): ?int
     {
         foreach ($this->headers as $index => $header) {
-            if (mb_convert_encoding($header['name'], 'UTF-8', 'CP866') === $header_text) {
+            if ($header['name'] === $header_text) {
                 return $index;
             }
         }
