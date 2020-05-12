@@ -13,7 +13,9 @@ abstract class AbstractChecker
 
     protected function pointlessChecker(bool $cur_value): void
     {
-        $this->previous_check_result = $cur_value;
+        if (!$this->searching_is_pointless) {
+            $this->previous_check_result = $cur_value;
+        }
     }
 
     /**

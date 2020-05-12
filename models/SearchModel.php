@@ -215,6 +215,6 @@ class SearchModel extends Model
         foreach ($array_to_allow as $item) {
             $result[] = ['CODE' => $this->getCodeSlice($item, $array_level)];
         }
-        return array_unique($result);
+        return array_unique($result, SORT_REGULAR);
     }
 }

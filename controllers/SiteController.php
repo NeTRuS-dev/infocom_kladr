@@ -38,9 +38,10 @@ class SiteController extends Controller
     public function actionIndex()
     {
         $search=new SearchModel();
-        $search->area='Ставрополь';
+//        $search->area='Ставрополь';
         $search->district='Изоб';
         $search->city='Солне';
+        $search->street='Школь';
         $row=$search->parseSearch();
         echo '<pre>';
         VarDumper::dump($row);
