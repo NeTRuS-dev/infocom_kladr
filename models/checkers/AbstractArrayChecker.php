@@ -21,7 +21,6 @@ abstract class AbstractArrayChecker extends AbstractChecker
         $this->checking_header = $checking_header;
         $this->sample_header = $sample_header;
     }
-    protected abstract function getCheckingFunction(): string;
 
     /**
      * @inheritDoc
@@ -31,9 +30,11 @@ abstract class AbstractArrayChecker extends AbstractChecker
         $checking_value = $row_to_check[$this->checking_header];
         foreach ($this->array_with_samples as $sample) {
             if (call_user_func([$this, $this->getCheckingFunction()], $checking_value, $sample[$this->sample_header])) {
+                $this->pointlessChecker(true);
                 return true;
             }
         }
+        $this->pointlessChecker(false);
         return false;
     }
 }

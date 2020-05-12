@@ -7,6 +7,14 @@ namespace app\models\checkers;
 abstract class AbstractChecker
 {
     public bool $searching_is_pointless = false;
+    protected bool $previous_check_result = false;
+
+    protected abstract function getCheckingFunction(): string;
+
+    protected function pointlessChecker(bool $cur_value): void
+    {
+        $this->previous_check_result = $cur_value;
+    }
 
     /**
      * @param array $row_to_check
