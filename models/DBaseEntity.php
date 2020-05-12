@@ -100,13 +100,14 @@ class DBaseEntity
 
     /**
      * @param AbstractChecker $checker
-     * @param int $start_index
+     * @param int $start_actual_search_record_index
      * @param int[]|null $searching_array
      * @return int[]|null
      */
-    public function selectIDsByCondition($checker, $start_index, $searching_array = null)
+    public function selectIDsByCondition($checker, $start_actual_search_record_index, $searching_array = null)
     {
         $results = [];
+        $start_index = 1;
         $size = $this->database_size;
         $passed_arr_is_empty = empty($searching_array);
         if (!$passed_arr_is_empty) {
@@ -115,6 +116,9 @@ class DBaseEntity
         }
         for ($i = $start_index; $i < $size; $i++) {
             $index = ($passed_arr_is_empty ? $i : $searching_array[$i]);
+            if ($index < $start_actual_search_record_index) {
+                continue;
+            }
             $record = $this->getRecord($index);
             if ($checker->check($record)) {
                 $results[] = $index;
