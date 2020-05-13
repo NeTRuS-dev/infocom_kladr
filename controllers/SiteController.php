@@ -58,9 +58,9 @@ class SiteController extends Controller
 
         $query = new SearchModel();
         if ($query->load(Yii::$app->request->post()) && $query->validate()) {
-
+            return $this->asJson($query->parseSearch());
         } else {
-
+            return $this->asJson($query->getFirstErrors());
         }
     }
 }
