@@ -132,6 +132,38 @@ class DBaseEntity
         return $results;
     }
 
+    private function isNumberInRange(int $num, int $min, int $max): bool
+    {
+        return filter_var(
+                $num,
+                FILTER_VALIDATE_INT,
+                array(
+                    'options' => array(
+                        'min_range' => $min,
+                        'max_range' => $max
+                    )
+                )
+            ) !== false;
+    }
+
+    private function findNumberRange(int $num, int $range): ?string
+    {
+        if ($num < 1) {
+            return null;
+        }
+        $i = 1;
+        $max_num = $range;
+
+        while (true) {
+            if ($this->isNumberInRange($num, $i, $max_num)) {
+                break;
+            }
+            $i = $max_num + 1;
+            $max_num += $range;
+        }
+        return "${i}-${max_num}";
+    }
+
     public function __destruct()
     {
         dbase_close($this->resource);
