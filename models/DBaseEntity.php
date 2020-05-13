@@ -74,7 +74,6 @@ class DBaseEntity
      */
     public function getRecord($record_number)
     {
-        //TODO chunk cache
         if ($record_number > $this->database_size) {
             return null;
         } else {
@@ -85,22 +84,21 @@ class DBaseEntity
             }
             if ($this->current_chunk !== $range_of_current_number) {
                 if ($this->chunk_in_cache_is_correct === false) {
-                    //TODO set in cache
                     $this->cache_storage->set("{$this->cache_prefix}.{$range_of_current_number}", $this->local_cached_data);
                 }
                 $this->current_chunk = $range_of_current_number;
                 $tmp = $this->cache_storage->get("{$this->cache_prefix}.{$range_of_current_number}");
                 if ($tmp === false) {
                     $this->local_cached_data = [];
+                    $this->chunk_in_cache_is_correct = false;
                 } else {
                     $this->local_cached_data = $tmp;
-
+                    $this->chunk_in_cache_is_correct = true;
                 }
             }
             if (array_key_exists($record_number, $this->local_cached_data)) {
                 return $this->local_cached_data[$record_number];
             } else {
-                /** @var array $record */
                 $record = array_map('rtrim', mb_convert_encoding(dbase_get_record_with_names($this->resource, $record_number), 'UTF-8', 'CP866'));
                 $this->local_cached_data[$record_number] = $record;
                 $this->chunk_in_cache_is_correct = false;
