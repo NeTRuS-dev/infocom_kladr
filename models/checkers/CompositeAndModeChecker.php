@@ -4,7 +4,7 @@
 namespace app\models\checkers;
 
 
-class CompositeChecker extends AbstractChecker
+class CompositeAndModeChecker extends AbstractChecker
 {
     public array $checkers;
 

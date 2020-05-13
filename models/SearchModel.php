@@ -3,11 +3,15 @@
 
 namespace app\models;
 
-use app\models\checkers\CompositeChecker;
+use app\models\checkers\AbstractChecker;
+use app\models\checkers\CompositeAndModeChecker;
+use app\models\checkers\CompositeOrModeChecker;
 use app\models\checkers\ContainsStringChecker;
+use app\models\checkers\EndsWithStringChecker;
 use app\models\checkers\EqualToAnyRowOfArrayChecker;
 use app\models\checkers\EqualToStringChecker;
 use app\models\checkers\StartsWithAnyStringOfArrayChecker;
+use app\models\checkers\StartsWithStringChecker;
 use Yii;
 use yii\base\Model;
 use yii\caching\CacheInterface;
@@ -88,7 +92,8 @@ class SearchModel extends Model
             }
 
             $built_query[] = new SearchParameter(
-                new ContainsStringChecker('NAME', $this->area),
+                $this->generateSubjectNameChecker($this->area),
+//                new ContainsStringChecker('NAME', $this->area),
                 1, $query_result
             );
             $query_result = $this->KLADR_BASE->execQuery($built_query);
@@ -121,12 +126,17 @@ class SearchModel extends Model
                 $this->cache_storage->set($cache_search_string, $query_result);
             }
             if (!is_null($allowed_code_begins)) {
-                $built_query[] = new SearchParameter(new CompositeChecker([
+                $built_query[] = new SearchParameter(new CompositeAndModeChecker([
                     new StartsWithAnyStringOfArrayChecker('CODE', $allowed_code_begins, 'CODE'),
-                    new ContainsStringChecker('NAME', $this->district)
+//                    new ContainsStringChecker('NAME', $this->district)
+                    $this->generateSubjectNameChecker($this->district)
                 ]), $start_index, $query_result);
             } else {
-                $built_query[] = new SearchParameter(new ContainsStringChecker('NAME', $this->district), $start_index, $query_result);
+                $built_query[] = new SearchParameter(
+//                    new ContainsStringChecker('NAME', $this->district),
+                    $this->generateSubjectNameChecker($this->district),
+                    $start_index, $query_result
+                );
             }
             $query_result = $this->KLADR_BASE->execQuery($built_query);
             $built_query = [];
@@ -155,9 +165,10 @@ class SearchModel extends Model
                 $this->cache_storage->set($cache_search_string, $query_result);
             }
 
-            $built_query[] = new SearchParameter(new CompositeChecker([
+            $built_query[] = new SearchParameter(new CompositeAndModeChecker([
                 new StartsWithAnyStringOfArrayChecker('CODE', $allowed_code_begins, 'CODE'),
-                new ContainsStringChecker('NAME', $this->city)
+//                new ContainsStringChecker('NAME', $this->city)
+                $this->generateSubjectNameChecker($this->city)
             ]), $start_index, $query_result);
             $query_result = $this->KLADR_BASE->execQuery($built_query);
             $built_query = [];
@@ -173,9 +184,10 @@ class SearchModel extends Model
 
             //useless to select types for street and cache, just begin comparing
 
-            $built_query[] = new SearchParameter(new CompositeChecker([
+            $built_query[] = new SearchParameter(new CompositeAndModeChecker([
                 new StartsWithAnyStringOfArrayChecker('CODE', $allowed_code_begins, 'CODE'),
-                new ContainsStringChecker('NAME', $this->street)
+//                new ContainsStringChecker('NAME', $this->street)
+                $this->generateSubjectNameChecker($this->street)
             ]));
             $query_result = $this->STREET_BASE->execQuery($built_query);
             $built_query = [];
@@ -192,9 +204,10 @@ class SearchModel extends Model
 
             //useless to select types for street and cache, just begin comparing
 
-            $built_query[] = new SearchParameter(new CompositeChecker([
+            $built_query[] = new SearchParameter(new CompositeAndModeChecker([
                 new StartsWithAnyStringOfArrayChecker('CODE', $allowed_code_begins, 'CODE'),
-                new ContainsStringChecker('NAME', $this->house)
+//                new ContainsStringChecker('NAME', $this->house)
+                $this->generateHouseNameChecker($this->house)
             ]));
             $query_result = $this->DOMA_BASE->execQuery($built_query);
             $result_rows = $this->DOMA_BASE->getRowsByIds($query_result);
@@ -216,6 +229,51 @@ class SearchModel extends Model
             $this->cache_storage->set($cache_search_string, $result);
         }
         return $this->SOCRBASE->getRowsByIds($result);
+    }
+
+    /**
+     * @param string $name
+     * @return AbstractChecker
+     */
+    private function generateSubjectNameChecker(string $name): AbstractChecker
+    {
+        $lower_name = strtolower($name);
+        $capitalized_name_only_first = ucfirst($lower_name);
+        $capitalized_name_all_words = ucwords($lower_name);
+        return new CompositeOrModeChecker([
+            new ContainsStringChecker('NAME', $capitalized_name_only_first),
+            new ContainsStringChecker('NAME', $name),
+            new ContainsStringChecker('NAME', $capitalized_name_all_words)
+        ]);
+    }
+
+    /**
+     * @param string $name
+     * @return AbstractChecker
+     */
+    private function generateHouseNameChecker(string $name): AbstractChecker
+    {
+        $lower_name = strtolower($name);
+
+        return new CompositeOrModeChecker([
+            new StartsWithStringChecker('NAME', $lower_name . ','),
+            new EndsWithStringChecker('NAME', ',' . $lower_name),
+            new ContainsStringChecker('NAME', ',' . $lower_name . ',')
+        ]);
+    }
+
+    /**
+     * @param array $array_to_allow
+     * @param int $array_level
+     * @return array
+     */
+    private function generateAllowedCodesArray($array_to_allow, $array_level)
+    {
+        $result = [];
+        foreach ($array_to_allow as $item) {
+            $result[] = ['CODE' => $this->getCodeSlice($item, $array_level)];
+        }
+        return array_unique($result, SORT_REGULAR);
     }
 
     /**
@@ -251,17 +309,4 @@ class SearchModel extends Model
         return mb_substr($row[$header_name], 0, $slice_length);
     }
 
-    /**
-     * @param array $array_to_allow
-     * @param int $array_level
-     * @return array
-     */
-    private function generateAllowedCodesArray($array_to_allow, $array_level)
-    {
-        $result = [];
-        foreach ($array_to_allow as $item) {
-            $result[] = ['CODE' => $this->getCodeSlice($item, $array_level)];
-        }
-        return array_unique($result, SORT_REGULAR);
-    }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace app\controllers;
 
 use app\models\checkers\ContainsStringChecker;
@@ -38,14 +39,14 @@ class SiteController extends Controller
     {
         set_time_limit(0);
 
-        $search=new SearchModel();
-        $search->area='Ставрополь';
-        $search->district='Изоб';
-        $search->city='Солне';
-        $search->street='Школь';
-        $search->house='5';
+        $search = new SearchModel();
+        $search->area = 'Ставрополь';
+        $search->district = 'Изоб';
+        $search->city = 'Солне';
+        $search->street = 'Школь';
+        $search->house = '5';
         $search->validate();
-        $row=$search->parseSearch();
+        $row = $search->parseSearch();
         echo '<pre>';
         VarDumper::dump($row);
         echo '</pre>';

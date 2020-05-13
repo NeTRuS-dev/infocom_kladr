@@ -40,6 +40,20 @@ abstract class AbstractChecker
      * @param string $searching_string
      * @return bool
      */
+    protected function ends_with($target, $searching_string)
+    {
+        $len = strlen($searching_string);
+        if ($len == 0) {
+            return true;
+        }
+        return (substr($target, -$len) === $searching_string);
+    }
+
+    /**
+     * @param string $target
+     * @param string $searching_string
+     * @return bool
+     */
     protected function in_string($target, $searching_string)
     {
         return (strpos($target, $searching_string) !== false);
