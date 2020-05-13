@@ -24,6 +24,8 @@ class DBaseEntity
     private string $current_chunk;
     private bool $chunk_in_cache_is_correct;
 
+    private int $chunk_size;
+
     /**
      * DBaseEntity constructor.
      * @param resource $resource
@@ -44,6 +46,7 @@ class DBaseEntity
         $this->local_cached_data = [];
         $this->cache_prefix = $cache_prefix;
         $this->chunk_in_cache_is_correct = true;
+        $this->chunk_size = Yii::$app->params['chunk_size'];
     }
 
     /**
@@ -188,16 +191,14 @@ class DBaseEntity
             throw new Exception('Number was less than 1');
         }
         $i = 1;
-        //chunk size
-        $range = 50000;
-        $max_num = $range;
+        $max_num = $this->chunk_size;
 
         while (true) {
             if ($this->isNumberInRange($num, $i, $max_num)) {
                 break;
             }
             $i = $max_num + 1;
-            $max_num += $range;
+            $max_num += $this->chunk_size;
         }
         return "${i}-${max_num}";
     }

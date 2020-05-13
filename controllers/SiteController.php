@@ -44,6 +44,7 @@ class SiteController extends Controller
         $search->city='Солне';
         $search->street='Школь';
         $search->house='5';
+        $search->validate();
         $row=$search->parseSearch();
         echo '<pre>';
         VarDumper::dump($row);
