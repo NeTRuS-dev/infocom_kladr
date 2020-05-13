@@ -14,5 +14,6 @@
     div {
         width: 4rem;
         height: 4rem;
+        margin: auto;
     }
 </style>

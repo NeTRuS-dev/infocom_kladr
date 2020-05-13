@@ -47,9 +47,12 @@ class SearchModel extends Model
     {
         return [
             [['area', 'district', 'city', 'street', 'house'], 'trim'],
+            ['area', 'required', 'when' => function ($model) {
+                return empty($model->district);
+            }, 'message' => 'Заполните область'],
             ['district', 'required', 'when' => function ($model) {
                 return empty($model->area);
-            }],
+            }, 'message' => 'Или район'],
         ];
     }
 
@@ -222,7 +225,6 @@ class SearchModel extends Model
     {
         $cache_search_string = "{$this->SOCRBASE->getFilePrefix()}.type_cache.{$type}";
         $tmp_request = $this->cache_storage->get($cache_search_string);
-        $result = [];
         if ($tmp_request !== false) {
             $result = $tmp_request;
         } else {
