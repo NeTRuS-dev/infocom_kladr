@@ -59,10 +59,17 @@ class SearchModel extends Model
         $this->is_validated = true;
     }
 
+    public function toDoSearch()
+    {
+        $collected_data = $this->collectSearchResult();
+        //TODO prettify
+        return $collected_data;
+    }
+
     /**
      * @return array
      */
-    public function parseSearch()
+    private function collectSearchResult()
     {
         if ($this->is_validated === false) {
             return [];
@@ -71,9 +78,9 @@ class SearchModel extends Model
         $query_result = [];
         $result_rows = [];
         /**
-         * @var array|null $allowed_code_begins
+         * @var array|null $code_and_name_chains
          */
-        $allowed_code_begins = null;
+        $code_and_name_chains = null;
         //searching for area
         if (!empty($this->area)) {
             $cache_search_string = "{$this->KLADR_BASE->getFilePrefix()}.area_cached";
@@ -93,7 +100,6 @@ class SearchModel extends Model
 
             $built_query[] = new SearchParameter(
                 $this->generateSubjectNameChecker($this->area),
-//                new ContainsStringChecker('NAME', $this->area),
                 1, $query_result
             );
             $query_result = $this->KLADR_BASE->execQuery($built_query);
@@ -102,7 +108,7 @@ class SearchModel extends Model
             if (empty($query_result)) {
                 return [];
             } else if (!empty($this->district) || !empty($this->city) || !empty($this->street) || !empty($this->house)) {
-                $allowed_code_begins = $this->generateAllowedCodesArray($this->KLADR_BASE->getRowsByIds($query_result), SubjectTypes::AREA);
+                $code_and_name_chains = $this->generateAllowedCodesArray($this->KLADR_BASE->getRowsByIds($query_result), SubjectTypes::AREA);
             } else {
                 $result_rows = $this->KLADR_BASE->getRowsByIds($query_result);
             }
@@ -125,15 +131,13 @@ class SearchModel extends Model
                 $built_query = [];
                 $this->cache_storage->set($cache_search_string, $query_result);
             }
-            if (!is_null($allowed_code_begins)) {
+            if (!is_null($code_and_name_chains)) {
                 $built_query[] = new SearchParameter(new CompositeAndModeChecker([
-                    new StartsWithAnyStringOfArrayChecker('CODE', $allowed_code_begins, 'CODE'),
-//                    new ContainsStringChecker('NAME', $this->district)
+                    new StartsWithAnyStringOfArrayChecker('CODE', $code_and_name_chains, 'CODE'),
                     $this->generateSubjectNameChecker($this->district)
                 ]), $start_index, $query_result);
             } else {
                 $built_query[] = new SearchParameter(
-//                    new ContainsStringChecker('NAME', $this->district),
                     $this->generateSubjectNameChecker($this->district),
                     $start_index, $query_result
                 );
@@ -143,7 +147,7 @@ class SearchModel extends Model
             if (empty($query_result)) {
                 return [];
             } else if (!empty($this->city) || !empty($this->street) || !empty($this->house)) {
-                $allowed_code_begins = $this->generateAllowedCodesArray($this->KLADR_BASE->getRowsByIds($query_result), SubjectTypes::DISTRICT);
+                $code_and_name_chains = $this->generateAllowedCodesArray($this->KLADR_BASE->getRowsByIds($query_result), SubjectTypes::DISTRICT, $code_and_name_chains);
             } else {
                 $result_rows = $this->KLADR_BASE->getRowsByIds($query_result);
             }
@@ -166,8 +170,7 @@ class SearchModel extends Model
             }
 
             $built_query[] = new SearchParameter(new CompositeAndModeChecker([
-                new StartsWithAnyStringOfArrayChecker('CODE', $allowed_code_begins, 'CODE'),
-//                new ContainsStringChecker('NAME', $this->city)
+                new StartsWithAnyStringOfArrayChecker('CODE', $code_and_name_chains, 'CODE'),
                 $this->generateSubjectNameChecker($this->city)
             ]), $start_index, $query_result);
             $query_result = $this->KLADR_BASE->execQuery($built_query);
@@ -175,7 +178,7 @@ class SearchModel extends Model
             if (empty($query_result)) {
                 return [];
             } else if (!empty($this->street) || !empty($this->house)) {
-                $allowed_code_begins = $this->generateAllowedCodesArray($this->KLADR_BASE->getRowsByIds($query_result), SubjectTypes::CITY);
+                $code_and_name_chains = $this->generateAllowedCodesArray($this->KLADR_BASE->getRowsByIds($query_result), SubjectTypes::CITY, $code_and_name_chains);
             } else {
                 $result_rows = $this->KLADR_BASE->getRowsByIds($query_result);
             }
@@ -185,8 +188,7 @@ class SearchModel extends Model
             //useless to select types for street and cache, just begin comparing
 
             $built_query[] = new SearchParameter(new CompositeAndModeChecker([
-                new StartsWithAnyStringOfArrayChecker('CODE', $allowed_code_begins, 'CODE'),
-//                new ContainsStringChecker('NAME', $this->street)
+                new StartsWithAnyStringOfArrayChecker('CODE', $code_and_name_chains, 'CODE'),
                 $this->generateSubjectNameChecker($this->street)
             ]));
             $query_result = $this->STREET_BASE->execQuery($built_query);
@@ -195,7 +197,7 @@ class SearchModel extends Model
             if (empty($query_result)) {
                 return [];
             } else if (!empty($this->house)) {
-                $allowed_code_begins = $this->generateAllowedCodesArray($this->STREET_BASE->getRowsByIds($query_result), SubjectTypes::STREET);
+                $code_and_name_chains = $this->generateAllowedCodesArray($this->STREET_BASE->getRowsByIds($query_result), SubjectTypes::STREET, $code_and_name_chains);
             } else {
                 $result_rows = $this->STREET_BASE->getRowsByIds($query_result);
             }
@@ -205,8 +207,7 @@ class SearchModel extends Model
             //useless to select types for street and cache, just begin comparing
 
             $built_query[] = new SearchParameter(new CompositeAndModeChecker([
-                new StartsWithAnyStringOfArrayChecker('CODE', $allowed_code_begins, 'CODE'),
-//                new ContainsStringChecker('NAME', $this->house)
+                new StartsWithAnyStringOfArrayChecker('CODE', $code_and_name_chains, 'CODE'),
                 $this->generateHouseNameChecker($this->house)
             ]));
             $query_result = $this->DOMA_BASE->execQuery($built_query);
@@ -214,7 +215,7 @@ class SearchModel extends Model
         }
 
 
-        return $result_rows;
+        return $this->mergeWithNameChains($code_and_name_chains, $result_rows);
     }
 
     private function getTypes(int $type)
@@ -265,15 +266,51 @@ class SearchModel extends Model
     /**
      * @param array $array_to_allow
      * @param int $array_level
+     * @param array $previous_step_codes
      * @return array
      */
-    private function generateAllowedCodesArray($array_to_allow, $array_level)
+    private function generateAllowedCodesArray($array_to_allow, $array_level, $previous_step_codes = [])
     {
         $result = [];
         foreach ($array_to_allow as $item) {
-            $result[] = ['CODE' => $this->getCodeSlice($item, $array_level)];
+            $name_chain = $item['SOCR'] . ' ' . $item['NAME'];
+            if (!empty($previous_step_codes)) {
+                foreach ($previous_step_codes as $prev) {
+                    $prev_code = $prev['CODE'];
+                    if (substr($item['CODE'], 0, strlen($prev_code)) === $prev_code) {
+                        $name_chain = $prev['NAME_CHAIN'] . '->' . $name_chain;
+                        break;
+                    }
+                }
+            }
+            $result[] = [
+                'CODE' => $this->getCodeSlice($item, $array_level),
+                'NAME_CHAIN' => $name_chain,
+            ];
         }
         return array_unique($result, SORT_REGULAR);
+    }
+
+    /**
+     * @param array $code_and_name_chains
+     * @param array $result_rows
+     * @return array
+     */
+    private function mergeWithNameChains($code_and_name_chains, $result_rows)
+    {
+        if (empty($code_and_name_chains)) {
+            return $result_rows;
+        }
+        foreach ($result_rows as &$result) {
+            foreach ($code_and_name_chains as $chain) {
+                $chain_code = $chain['CODE'];
+                if (substr($result['CODE'], 0, strlen($chain_code)) === $chain_code) {
+                    $result['NAME_CHAIN'] = $chain['NAME_CHAIN'];
+                    break;
+                }
+            }
+        }
+        return $result_rows;
     }
 
     /**

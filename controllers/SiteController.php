@@ -37,20 +37,20 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        set_time_limit(0);
-
-        $search = new SearchModel();
-        $search->area = 'Ставрополь';
-        $search->district = 'Изоб';
-        $search->city = 'Солне';
-        $search->street = 'Школь';
-        $search->house = '5';
-        $search->validate();
-        $row = $search->parseSearch();
-        echo '<pre>';
-        VarDumper::dump($row);
-        echo '</pre>';
-        die();
+//        set_time_limit(0);
+//
+//        $search = new SearchModel();
+//        $search->area = 'Ставрополь';
+//        $search->district = 'Изоб';
+//        $search->city = 'Солнечнодольск';
+//        $search->street = 'Школьный';
+//        $search->house = '5а';
+//        $search->validate();
+//        $row = $search->toDoSearch();
+//        echo '<pre>';
+//        VarDumper::dump($row);
+//        echo '</pre>';
+//        die();
         return $this->render('index');
     }
 
@@ -60,7 +60,7 @@ class SiteController extends Controller
 
         $query = new SearchModel();
         if ($query->load(Yii::$app->request->post()) && $query->validate()) {
-            return $this->asJson($query->parseSearch());
+            return $this->asJson($query->toDoSearch());
         } else {
             return $this->asJson($query->getFirstErrors());
         }
