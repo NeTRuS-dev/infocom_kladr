@@ -17,8 +17,10 @@ class SearchModel extends Model
     public string $city = '';
     public string $street = '';
     public string $house = '';
+
+    private bool $is_validated = false;
+
     private DBase $KLADR_BASE;
-//    private DBase $NAMEMAP_BASE;
     private DBase $STREET_BASE;
     private DBase $SOCRBASE;
     private DBase $DOMA_BASE;
@@ -27,7 +29,6 @@ class SearchModel extends Model
     {
         parent::__construct();
         $this->KLADR_BASE = new DBase(DBNameConstants::KLADR);
-//        $this->NAMEMAP = new DBase(DBNameConstants::NAMEMAP);
         $this->STREET_BASE = new DBase(DBNameConstants::STREET);
         $this->SOCRBASE = new DBase(DBNameConstants::SOCRBASE);
         $this->DOMA_BASE = new DBase(DBNameConstants::DOMA);
@@ -43,8 +44,20 @@ class SearchModel extends Model
         ];
     }
 
+    public function afterValidate()
+    {
+        parent::afterValidate();
+        $this->is_validated = true;
+    }
+
+    /**
+     * @return array
+     */
     public function parseSearch()
     {
+        if ($this->is_validated === false) {
+            return [];
+        }
         $built_query = [];
         $query_result = [];
         $result_rows = [];
