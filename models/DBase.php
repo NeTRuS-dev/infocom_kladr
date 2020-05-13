@@ -52,6 +52,14 @@ class DBase
     }
 
     /**
+     * @return string
+     */
+    public function getFilePrefix()
+    {
+        return $this->base_connection->cache_prefix;
+    }
+
+    /**
      * @param string $filename
      */
     private function load($filename)

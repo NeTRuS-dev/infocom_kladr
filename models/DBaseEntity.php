@@ -19,7 +19,7 @@ class DBaseEntity
     private array $headers;
 
     private CacheInterface $cache_storage;
-    private string $cache_prefix;
+    public string $cache_prefix;
     private array $local_cached_data;
     private string $current_chunk;
     private bool $chunk_in_cache_is_correct;

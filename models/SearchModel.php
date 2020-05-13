@@ -8,7 +8,9 @@ use app\models\checkers\ContainsStringChecker;
 use app\models\checkers\EqualToAnyRowOfArrayChecker;
 use app\models\checkers\EqualToStringChecker;
 use app\models\checkers\StartsWithAnyStringOfArrayChecker;
+use Yii;
 use yii\base\Model;
+use yii\caching\CacheInterface;
 
 class SearchModel extends Model
 {
@@ -25,6 +27,8 @@ class SearchModel extends Model
     private DBase $SOCRBASE;
     private DBase $DOMA_BASE;
 
+    private CacheInterface $cache_storage;
+
     public function __construct()
     {
         parent::__construct();
@@ -32,6 +36,7 @@ class SearchModel extends Model
         $this->STREET_BASE = new DBase(DBNameConstants::STREET);
         $this->SOCRBASE = new DBase(DBNameConstants::SOCRBASE);
         $this->DOMA_BASE = new DBase(DBNameConstants::DOMA);
+        $this->cache_storage = Yii::$app->cache;
     }
 
     public function rules()
@@ -67,18 +72,28 @@ class SearchModel extends Model
         $allowed_code_begins = null;
         //searching for area
         if (!empty($this->area)) {
-            //TODO possible cache type searching
-            $built_query[] = new SearchParameter(
-                new EqualToAnyRowOfArrayChecker(
-                    'SOCR',
-                    $this->getTypes(SubjectTypes::AREA),
-                    'SCNAME'));
-            //
+            $cache_search_string = "{$this->KLADR_BASE->getFilePrefix()}.area_cached";
+            $tmp_request = $this->cache_storage->get($cache_search_string);
+            if ($tmp_request !== false) {
+                $query_result = $tmp_request;
+            } else {
+                $built_query[] = new SearchParameter(
+                    new EqualToAnyRowOfArrayChecker(
+                        'SOCR',
+                        $this->getTypes(SubjectTypes::AREA),
+                        'SCNAME'));
+                $query_result = $this->KLADR_BASE->execQuery($built_query);
+                $built_query = [];
+                $this->cache_storage->set($cache_search_string, $query_result);
+            }
+
             $built_query[] = new SearchParameter(
                 new ContainsStringChecker('NAME', $this->area),
+                1, $query_result
             );
             $query_result = $this->KLADR_BASE->execQuery($built_query);
             $built_query = [];
+
             if (empty($query_result)) {
                 return [];
             } else if (!empty($this->district) || !empty($this->city) || !empty($this->street) || !empty($this->house)) {
@@ -94,11 +109,17 @@ class SearchModel extends Model
             if (!empty($this->area)) {
                 $start_index = $query_result[0];
             }
-            //TODO possible cache type searching
             //getting all districts
-            $built_query[] = new SearchParameter(new EqualToAnyRowOfArrayChecker('SOCR', $this->getTypes(SubjectTypes::DISTRICT), 'SCNAME'));
-            $query_result = $this->KLADR_BASE->execQuery($built_query); //add districts
-            $built_query = [];
+            $cache_search_string = "{$this->KLADR_BASE->getFilePrefix()}.district_cached";
+            $tmp_request = $this->cache_storage->get($cache_search_string);
+            if ($tmp_request !== false) {
+                $query_result = $tmp_request;
+            } else {
+                $built_query[] = new SearchParameter(new EqualToAnyRowOfArrayChecker('SOCR', $this->getTypes(SubjectTypes::DISTRICT), 'SCNAME'));
+                $query_result = $this->KLADR_BASE->execQuery($built_query);
+                $built_query = [];
+                $this->cache_storage->set($cache_search_string, $query_result);
+            }
             if (!is_null($allowed_code_begins)) {
                 $built_query[] = new SearchParameter(new CompositeChecker([
                     new StartsWithAnyStringOfArrayChecker('CODE', $allowed_code_begins, 'CODE'),
@@ -121,12 +142,18 @@ class SearchModel extends Model
 
             $start_index = $query_result[0];
 
-            //TODO possible cache type searching
             //getting all cities
-            $small_territory_and_cities = [...$this->getTypes(SubjectTypes::SMALL_TER), ...$this->getTypes(SubjectTypes::CITY)];
-            $built_query[] = new SearchParameter(new EqualToAnyRowOfArrayChecker('SOCR', $small_territory_and_cities, 'SCNAME'));
-            $query_result = $this->KLADR_BASE->execQuery($built_query); //all cities
-            $built_query = [];
+            $cache_search_string = "{$this->KLADR_BASE->getFilePrefix()}.city_cached";
+            $tmp_request = $this->cache_storage->get($cache_search_string);
+            if ($tmp_request !== false) {
+                $query_result = $tmp_request;
+            } else {
+                $small_territory_and_cities = [...$this->getTypes(SubjectTypes::SMALL_TER), ...$this->getTypes(SubjectTypes::CITY)];
+                $built_query[] = new SearchParameter(new EqualToAnyRowOfArrayChecker('SOCR', $small_territory_and_cities, 'SCNAME'));
+                $query_result = $this->KLADR_BASE->execQuery($built_query); //all cities
+                $built_query = [];
+                $this->cache_storage->set($cache_search_string, $query_result);
+            }
 
             $built_query[] = new SearchParameter(new CompositeChecker([
                 new StartsWithAnyStringOfArrayChecker('CODE', $allowed_code_begins, 'CODE'),
@@ -179,8 +206,15 @@ class SearchModel extends Model
 
     private function getTypes(int $type)
     {
-        //TODO possible caching
-        $result = $this->SOCRBASE->execQuery([new SearchParameter(new EqualToStringChecker('LEVEL', "$type"))]);
+        $cache_search_string = "{$this->SOCRBASE->getFilePrefix()}.type_cache.{$type}";
+        $tmp_request = $this->cache_storage->get($cache_search_string);
+        $result = [];
+        if ($tmp_request !== false) {
+            $result = $tmp_request;
+        } else {
+            $result = $this->SOCRBASE->execQuery([new SearchParameter(new EqualToStringChecker('LEVEL', "$type"))]);
+            $this->cache_storage->set($cache_search_string, $result);
+        }
         return $this->SOCRBASE->getRowsByIds($result);
     }
 
