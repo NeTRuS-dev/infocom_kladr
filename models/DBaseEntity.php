@@ -5,6 +5,7 @@ namespace app\models;
 
 
 use app\models\checkers\AbstractChecker;
+use Exception;
 use Yii;
 use yii\caching\CacheInterface;
 
@@ -14,11 +15,14 @@ class DBaseEntity
      * @var resource $resource
      */
     private $resource;
-    private string $cache_prefix;
     private int $database_size;
     private array $headers;
-    private array $cached_data;
-    private array $search_cache;
+
+    private CacheInterface $cache_storage;
+    private string $cache_prefix;
+    private array $local_cached_data;
+    private string $current_chunk;
+    private bool $chunk_in_cache_is_correct;
 
     /**
      * DBaseEntity constructor.
@@ -31,12 +35,15 @@ class DBaseEntity
             return;
         }
         $this->headers = [];
-        $this->cached_data = [];
-        $this->search_cache = [];
         $this->resource = $resource;
         $this->setUpHeaders();
         $this->database_size = dbase_numrecords($this->resource);
+
+        $this->cache_storage = Yii::$app->cache;
+        $this->current_chunk = '';
+        $this->local_cached_data = [];
         $this->cache_prefix = $cache_prefix;
+        $this->chunk_in_cache_is_correct = true;
     }
 
     /**
@@ -71,12 +78,32 @@ class DBaseEntity
         if ($record_number > $this->database_size) {
             return null;
         } else {
-            if (array_key_exists($record_number, $this->cached_data)) {
-                return $this->cached_data[$record_number];
+            try {
+                $range_of_current_number = $this->findNumberRange($record_number);
+            } catch (Exception $e) {
+                return null;
+            }
+            if ($this->current_chunk !== $range_of_current_number) {
+                if ($this->chunk_in_cache_is_correct === false) {
+                    //TODO set in cache
+                    $this->cache_storage->set("{$this->cache_prefix}.{$range_of_current_number}", $this->local_cached_data);
+                }
+                $this->current_chunk = $range_of_current_number;
+                $tmp = $this->cache_storage->get("{$this->cache_prefix}.{$range_of_current_number}");
+                if ($tmp === false) {
+                    $this->local_cached_data = [];
+                } else {
+                    $this->local_cached_data = $tmp;
+
+                }
+            }
+            if (array_key_exists($record_number, $this->local_cached_data)) {
+                return $this->local_cached_data[$record_number];
             } else {
                 /** @var array $record */
                 $record = array_map('rtrim', mb_convert_encoding(dbase_get_record_with_names($this->resource, $record_number), 'UTF-8', 'CP866'));
-                $this->cached_data[$record_number] = $record;
+                $this->local_cached_data[$record_number] = $record;
+                $this->chunk_in_cache_is_correct = false;
                 return $record;
             }
         }
@@ -132,6 +159,12 @@ class DBaseEntity
         return $results;
     }
 
+    /**
+     * @param int $num
+     * @param int $min
+     * @param int $max
+     * @return bool
+     */
     private function isNumberInRange(int $num, int $min, int $max): bool
     {
         return filter_var(
@@ -146,12 +179,19 @@ class DBaseEntity
             ) !== false;
     }
 
-    private function findNumberRange(int $num, int $range): ?string
+    /**
+     * @param int $num
+     * @return string
+     * @throws Exception
+     */
+    private function findNumberRange(int $num): string
     {
         if ($num < 1) {
-            return null;
+            throw new Exception('Number was less than 1');
         }
         $i = 1;
+        //chunk size
+        $range = 50000;
         $max_num = $range;
 
         while (true) {

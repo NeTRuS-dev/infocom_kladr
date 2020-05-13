@@ -32,7 +32,7 @@ abstract class AbstractChecker
     protected function starts_with($target, $searching_string)
     {
         $length = strlen($searching_string);
-        return (substr($target, 0, $length) == $searching_string);
+        return (substr($target, 0, $length) === $searching_string);
     }
 
     /**
@@ -52,7 +52,7 @@ abstract class AbstractChecker
      */
     protected function strings_are_equal($target, $searching_string)
     {
-        return ($target == $searching_string);
+        return ($target === $searching_string);
     }
 
 }
