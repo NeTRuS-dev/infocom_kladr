@@ -87,7 +87,7 @@ class DBaseEntity
             }
             if ($this->current_chunk !== $range_of_current_number) {
                 if ($this->chunk_in_cache_is_correct === false) {
-                    $this->cache_storage->set("{$this->cache_prefix}.{$range_of_current_number}", $this->local_cached_data);
+                    $this->cache_storage->set("{$this->cache_prefix}.{$this->current_chunk}", $this->local_cached_data);
                 }
                 $this->current_chunk = $range_of_current_number;
                 $tmp = $this->cache_storage->get("{$this->cache_prefix}.{$range_of_current_number}");
