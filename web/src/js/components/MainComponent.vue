@@ -114,7 +114,7 @@
 
 <style lang="scss" scoped>
     .main {
-        width: 40%;
+        width: 80%;
         margin-left: auto;
         margin-right: auto;
         display: flex;
@@ -126,7 +126,7 @@
 
         form {
             margin-top: 10%;
-            width: 100%;
+            width: 50%;
         }
     }
 </style>

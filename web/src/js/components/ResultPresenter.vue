@@ -2,6 +2,13 @@
     <div class="carousel-item" :class="{active:isFirst}">
         <div class="content">
             {{content}}
+            <div class="name-chain"></div>
+            <div class="name"></div>
+            <div class="socr"></div>
+            <div class="code"></div>
+            <div class="index"></div>
+            <div class="gninmb"></div>
+            <div class="ocatd"></div>
         </div>
     </div>
 </template>

@@ -1,8 +1,8 @@
 <template>
     <div id="results" class="carousel slide" data-ride="carousel">
         <div class="carousel-inner" role="listbox">
-            <result-presenter v-for="result in resultsToPresent" :key="result.CODE" :content="result"
-                              :is-first="isFirst"></result-presenter>
+            <result-presenter v-for="(result, index) in resultsToPresent" :key="result.CODE" :content="result"
+                              :is-first="index===0"></result-presenter>
         </div>
         <a class="carousel-control-prev" href="#results" role="button" data-slide="prev">
             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
@@ -33,20 +33,18 @@
                 firstSet: false,
             }
         },
-        computed: {
-            isFirst() {
-                if (this.firstSet) {
-                    return false;
-                } else {
-                    this.firstSet = true;
-                    return true;
-                }
-            }
-        },
+        computed: {},
         methods: {}
     }
 </script>
 
-<style scoped>
-
+<style lang="scss" scoped>
+    .carousel {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
 </style>

@@ -1,5 +1,6 @@
 import '@/scss/styles.scss';
-import 'bootstrap/js/dist/carousel';
+import $ from 'jquery'
+import 'bootstrap'
 import Vue from 'vue';
 import MainComponent from "@/js/components/MainComponent";
 

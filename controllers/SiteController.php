@@ -2,8 +2,6 @@
 
 namespace app\controllers;
 
-use app\models\SearchModel;
-use Yii;
 use yii\web\Controller;
 
 class SiteController extends Controller
