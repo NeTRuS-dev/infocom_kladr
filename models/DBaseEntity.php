@@ -112,6 +112,7 @@ class DBaseEntity
     {
         if ($this->chunk_in_cache_is_correct === false) {
             $this->cache_storage->set("{$this->cache_prefix}.{$this->current_chunk}", $this->local_cached_data);
+            $this->chunk_in_cache_is_correct = true;
         }
     }
 

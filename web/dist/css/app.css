@@ -12641,7 +12641,19 @@ div[data-v-e0752284] {
 }
 .content[data-v-02e677da] {
   width: 100%;
-  height: 100%;
+  height: 70%;
+}
+.row-presenter[data-v-02e677da] {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+  -webkit-justify-content: space-between;
+  -moz-box-pack: justify;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
 }
 .carousel[data-v-40df1d4c] {
   width: 100%;
@@ -12668,6 +12680,9 @@ div[data-v-e0752284] {
   -moz-box-align: center;
   -ms-flex-align: center;
   align-items: center;
+}
+.carousel-inner[data-v-40df1d4c] {
+  width: 70%;
 }
 .main[data-v-5e113d5a] {
   width: 80%;

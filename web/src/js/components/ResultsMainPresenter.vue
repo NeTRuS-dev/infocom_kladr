@@ -1,5 +1,5 @@
 <template>
-    <div id="results" class="carousel slide" data-ride="carousel">
+    <div id="results" class="carousel slide" data-interval="false">
         <div class="carousel-inner" role="listbox">
             <result-presenter v-for="(result, index) in resultsToPresent" :key="result.CODE" :content="result"
                               :is-first="index===0"></result-presenter>
@@ -46,5 +46,8 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
+    }
+    .carousel-inner{
+        width: 70%;
     }
 </style>

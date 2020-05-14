@@ -64,9 +64,7 @@ class SearchModel extends Model
 
     public function toDoSearch()
     {
-        $collected_data = $this->collectSearchResult();
-        //TODO prettify
-        return $collected_data;
+        return $this->collectSearchResult();
     }
 
     /**
@@ -111,7 +109,7 @@ class SearchModel extends Model
             if (empty($query_result)) {
                 return [];
             } else if (!empty($this->district) || !empty($this->city) || !empty($this->street) || !empty($this->house)) {
-                $code_and_name_chains = $this->generateAllowedCodesArray($this->KLADR_BASE->getRowsByIds($query_result), SubjectTypes::AREA);
+                $code_and_name_chains = $this->generateChainsArray($this->KLADR_BASE->getRowsByIds($query_result), SubjectTypes::AREA);
             } else {
                 $result_rows = $this->KLADR_BASE->getRowsByIds($query_result);
             }
@@ -150,7 +148,7 @@ class SearchModel extends Model
             if (empty($query_result)) {
                 return [];
             } else if (!empty($this->city) || !empty($this->street) || !empty($this->house)) {
-                $code_and_name_chains = $this->generateAllowedCodesArray($this->KLADR_BASE->getRowsByIds($query_result), SubjectTypes::DISTRICT, $code_and_name_chains);
+                $code_and_name_chains = $this->generateChainsArray($this->KLADR_BASE->getRowsByIds($query_result), SubjectTypes::DISTRICT, $code_and_name_chains);
             } else {
                 $result_rows = $this->KLADR_BASE->getRowsByIds($query_result);
             }
@@ -181,7 +179,7 @@ class SearchModel extends Model
             if (empty($query_result)) {
                 return [];
             } else if (!empty($this->street) || !empty($this->house)) {
-                $code_and_name_chains = $this->generateAllowedCodesArray($this->KLADR_BASE->getRowsByIds($query_result), SubjectTypes::CITY, $code_and_name_chains);
+                $code_and_name_chains = $this->generateChainsArray($this->KLADR_BASE->getRowsByIds($query_result), SubjectTypes::CITY, $code_and_name_chains);
             } else {
                 $result_rows = $this->KLADR_BASE->getRowsByIds($query_result);
             }
@@ -200,7 +198,7 @@ class SearchModel extends Model
             if (empty($query_result)) {
                 return [];
             } else if (!empty($this->house)) {
-                $code_and_name_chains = $this->generateAllowedCodesArray($this->STREET_BASE->getRowsByIds($query_result), SubjectTypes::STREET, $code_and_name_chains);
+                $code_and_name_chains = $this->generateChainsArray($this->STREET_BASE->getRowsByIds($query_result), SubjectTypes::STREET, $code_and_name_chains);
             } else {
                 $result_rows = $this->STREET_BASE->getRowsByIds($query_result);
             }
@@ -240,7 +238,7 @@ class SearchModel extends Model
      */
     private function generateSubjectNameChecker(string $name): AbstractChecker
     {
-        $lower_name = strtolower($name);
+        $lower_name = mb_strtolower($name);
         $capitalized_name_only_first = ucfirst($lower_name);
         $capitalized_name_all_words = ucwords($lower_name);
         return new CompositeOrModeChecker([
@@ -256,7 +254,7 @@ class SearchModel extends Model
      */
     private function generateHouseNameChecker(string $name): AbstractChecker
     {
-        $lower_name = strtolower($name);
+        $lower_name = mb_strtolower($name);
 
         return new CompositeOrModeChecker([
             new StartsWithStringChecker('NAME', $lower_name . ','),
@@ -271,7 +269,7 @@ class SearchModel extends Model
      * @param array $previous_step_codes
      * @return array
      */
-    private function generateAllowedCodesArray($array_to_allow, $array_level, $previous_step_codes = [])
+    private function generateChainsArray($array_to_allow, $array_level, $previous_step_codes = [])
     {
         $result = [];
         foreach ($array_to_allow as $item) {

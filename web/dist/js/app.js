@@ -214,6 +214,10 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 //
 //
 //
+//
+//
+//
+//
 
 
 
@@ -277,7 +281,6 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 
               case 6:
                 fetchedData = _context.sent;
-                console.log(fetchedData);
 
                 if (fetchedData.errors) {
                   _this.errors = fetchedData.errors;
@@ -289,13 +292,28 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
                   _this.presenting_results = true;
                 }
 
-              case 9:
+              case 8:
               case "end":
                 return _context.stop();
             }
           }
         }, _callee);
       }))();
+    },
+    newQuery: function newQuery() {
+      this.presenting_results = false;
+      this.area = '';
+      this.district = '';
+      this.city = '';
+      this.street = '';
+      this.house = '';
+      this.errors = {
+        area: '',
+        district: '',
+        city: '',
+        street: '',
+        house: ''
+      };
     }
   },
   computed: {
@@ -336,6 +354,36 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   name: "ResultPresenter",
   props: {
@@ -346,6 +394,11 @@ __webpack_require__.r(__webpack_exports__);
     isFirst: {
       type: Boolean,
       "default": false
+    }
+  },
+  computed: {
+    withChain: function withChain() {
+      return this.content.NAME_CHAIN && this.content.NAME;
     }
   }
 });
@@ -22116,14 +22169,16 @@ var render = function() {
                 "div",
                 { staticClass: "w-100 d-flex justify-content-center" },
                 [
-                  _c(
-                    "button",
-                    {
-                      staticClass: "btn btn-primary",
-                      on: { click: _vm.onSubmitClick }
-                    },
-                    [_vm._v("Найти")]
-                  )
+                  _c("input", {
+                    staticClass: "btn btn-primary",
+                    attrs: { type: "submit", value: "Найти" },
+                    on: {
+                      click: function($event) {
+                        $event.preventDefault()
+                        return _vm.onSubmitClick($event)
+                      }
+                    }
+                  })
                 ]
               )
             ],
@@ -22134,12 +22189,20 @@ var render = function() {
       _vm.waiting_for_response ? _c("loading-spinner") : _vm._e(),
       _vm._v(" "),
       _vm.presenting_results
-        ? _c("results-main-presenter", {
-            attrs: { "results-to-present": _vm.dataToPresent }
-          })
+        ? [
+            _c("results-main-presenter", {
+              attrs: { "results-to-present": _vm.dataToPresent }
+            }),
+            _vm._v(" "),
+            _c(
+              "button",
+              { staticClass: "btn btn-info", on: { click: _vm.newQuery } },
+              [_vm._v("Новый запрос")]
+            )
+          ]
         : _vm._e()
     ],
-    1
+    2
   )
 }
 var staticRenderFns = []
@@ -22168,22 +22231,92 @@ var render = function() {
     "div",
     { staticClass: "carousel-item", class: { active: _vm.isFirst } },
     [
-      _c("div", { staticClass: "content" }, [
-        _vm._v("\n        " + _vm._s(_vm.content) + "\n        "),
-        _c("div", { staticClass: "name-chain" }),
-        _vm._v(" "),
-        _c("div", { staticClass: "name" }),
-        _vm._v(" "),
-        _c("div", { staticClass: "socr" }),
-        _vm._v(" "),
-        _c("div", { staticClass: "code" }),
-        _vm._v(" "),
-        _c("div", { staticClass: "index" }),
-        _vm._v(" "),
-        _c("div", { staticClass: "gninmb" }),
-        _vm._v(" "),
-        _c("div", { staticClass: "ocatd" })
-      ])
+      _c(
+        "div",
+        { staticClass: "content" },
+        [
+          _vm.withChain
+            ? [
+                _c("div", { staticClass: "row-presenter name-chain" }, [
+                  _c("div", { staticClass: "name" }, [
+                    _vm._v("Полный путь : ")
+                  ]),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "value" }, [
+                    _vm._v(
+                      _vm._s(_vm.content.NAME_CHAIN + " -> " + _vm.content.NAME)
+                    )
+                  ])
+                ])
+              ]
+            : _vm.content.NAME
+            ? [
+                _c("div", { staticClass: "row-presenter name" }, [
+                  _c("div", { staticClass: "name" }, [_vm._v("Название : ")]),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "value" }, [
+                    _vm._v(_vm._s(_vm.content.NAME))
+                  ])
+                ])
+              ]
+            : _vm._e(),
+          _vm._v(" "),
+          _vm.content.SOCR
+            ? [
+                _c("div", { staticClass: "row-presenter socr" }, [
+                  _c("div", { staticClass: "name" }, [_vm._v("Сокращение : ")]),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "value" }, [
+                    _vm._v(_vm._s(_vm.content.SOCR))
+                  ])
+                ])
+              ]
+            : _vm._e(),
+          _vm._v(" "),
+          _vm.content.CODE
+            ? [
+                _c("div", { staticClass: "row-presenter code" }, [
+                  _c("div", { staticClass: "name" }, [_vm._v("Код КЛАДР : ")]),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "value" }, [
+                    _vm._v(_vm._s(_vm.content.CODE))
+                  ])
+                ])
+              ]
+            : _vm._e(),
+          _vm._v(" "),
+          _vm.content.INDEX
+            ? [
+                _c("div", { staticClass: "row-presenter index" }, [
+                  _c("div", { staticClass: "name" }, [
+                    _vm._v("Почтовый ндекс : ")
+                  ]),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "value" }, [
+                    _vm._v(_vm._s(_vm.content.INDEX))
+                  ])
+                ])
+              ]
+            : _vm._e(),
+          _vm._v(" "),
+          _c("div", { staticClass: "row-presenter gninmb" }, [
+            _c("div", { staticClass: "name" }, [_vm._v("Код налоговой : ")]),
+            _vm._v(" "),
+            _c("div", { staticClass: "value" }, [
+              _vm._v(_vm._s(_vm.content.GNINMB))
+            ])
+          ]),
+          _vm._v(" "),
+          _c("div", { staticClass: "row-presenter ocatd" }, [
+            _c("div", { staticClass: "name" }, [_vm._v("Код ОКАТО : ")]),
+            _vm._v(" "),
+            _c("div", { staticClass: "value" }, [
+              _vm._v(_vm._s(_vm.content.OCATD))
+            ])
+          ])
+        ],
+        2
+      )
     ]
   )
 }
@@ -22213,7 +22346,7 @@ var render = function() {
     "div",
     {
       staticClass: "carousel slide",
-      attrs: { id: "results", "data-ride": "carousel" }
+      attrs: { id: "results", "data-interval": "false" }
     },
     [
       _c(

@@ -32,11 +32,15 @@
                     holder="Введите номер дома">Дом
             </form-group-component>
             <div class="w-100 d-flex justify-content-center">
-                <button class="btn btn-primary" @click="onSubmitClick">Найти</button>
+                <input type="submit" value="Найти" class="btn btn-primary" @click.prevent="onSubmitClick">
             </div>
         </form>
         <loading-spinner v-if="waiting_for_response"></loading-spinner>
-        <results-main-presenter v-if="presenting_results" :results-to-present="dataToPresent"></results-main-presenter>
+        <template v-if="presenting_results">
+            <results-main-presenter
+                    :results-to-present="dataToPresent"></results-main-presenter>
+            <button class="btn btn-info" @click="newQuery">Новый запрос</button>
+        </template>
     </div>
 </template>
 
@@ -90,7 +94,6 @@
                     body: JSON.stringify(data)
                 });
                 let fetchedData = await response.json()
-                console.log(fetchedData)
                 if (fetchedData.errors) {
                     this.errors = fetchedData.errors
                     this.waiting_for_response = false
@@ -101,7 +104,22 @@
                     this.waiting_for_response = false
                     this.presenting_results = true
                 }
-            }
+            },
+            newQuery() {
+                this.presenting_results = false
+                this.area = ''
+                this.district = ''
+                this.city = ''
+                this.street = ''
+                this.house = ''
+                this.errors = {
+                    area: '',
+                    district: '',
+                    city: '',
+                    street: '',
+                    house: '',
+                }
+            },
         },
         computed: {
             showForm() {
