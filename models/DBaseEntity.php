@@ -120,7 +120,7 @@ class DBaseEntity
      * @param string $header_text
      * @return null|int
      */
-    public function getHeaderNumber(string $header_text): ?int
+    public function getHeaderNumber($header_text)
     {
         foreach ($this->headers as $index => $header) {
             if ($header['name'] === $header_text) {
@@ -130,7 +130,10 @@ class DBaseEntity
         return null;
     }
 
-    public function getDatabaseSize(): int
+    /**
+     * @return int
+     */
+    public function getDatabaseSize()
     {
         return $this->database_size;
     }
@@ -173,7 +176,7 @@ class DBaseEntity
      * @param int $max
      * @return bool
      */
-    private function isNumberInRange(int $num, int $min, int $max): bool
+    private function isNumberInRange($num, $min, $max)
     {
         return filter_var(
                 $num,
@@ -192,7 +195,7 @@ class DBaseEntity
      * @return string
      * @throws Exception
      */
-    private function findNumberRange(int $num): string
+    private function findNumberRange($num)
     {
         if ($num < 1) {
             throw new Exception('Number was less than 1');
