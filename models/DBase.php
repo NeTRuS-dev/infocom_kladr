@@ -11,7 +11,11 @@ class DBase
     //jesus kill the guy named those dbases
     private ?DBaseEntity $base_connection = null;
 
-    public function __construct(string $filename)
+    /**
+     * DBase constructor.
+     * @param string $filename
+     */
+    public function __construct($filename)
     {
         $this->load($filename);
     }

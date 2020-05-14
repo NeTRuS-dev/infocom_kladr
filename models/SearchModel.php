@@ -219,7 +219,11 @@ class SearchModel extends Model
         return $this->mergeWithNameChains($code_and_name_chains, $result_rows);
     }
 
-    private function getTypes(int $type)
+    /**
+     * @param int $type
+     * @return array
+     */
+    private function getTypes($type)
     {
         $cache_search_string = "{$this->SOCRBASE->getFilePrefix()}.type_cache.{$type}";
         $tmp_request = $this->cache_storage->get($cache_search_string);
@@ -236,7 +240,7 @@ class SearchModel extends Model
      * @param string $name
      * @return AbstractChecker
      */
-    private function generateSubjectNameChecker(string $name): AbstractChecker
+    private function generateSubjectNameChecker($name)
     {
         return new ContainsStringChecker('NAME', $name);
     }
@@ -245,7 +249,7 @@ class SearchModel extends Model
      * @param string $name
      * @return AbstractChecker
      */
-    private function generateHouseNameChecker(string $name): AbstractChecker
+    private function generateHouseNameChecker($name)
     {
         return new CompositeOrModeChecker([
             new StartsWithStringChecker('NAME', $name . ','),
@@ -282,6 +286,11 @@ class SearchModel extends Model
         return array_unique($result, SORT_REGULAR);
     }
 
+    /**
+     * @param string $target
+     * @param string $searching_string
+     * @return bool
+     */
     private function starts_with($target, $searching_string)
     {
         $length = mb_strlen($searching_string);
@@ -317,9 +326,6 @@ class SearchModel extends Model
      */
     private function getCodeSlice($row, $type)
     {
-        //4+4+3
-        //street 4
-        //home 2
         $header_name = 'CODE';
         $slice_length = 0;
         switch ($type) {
