@@ -39,6 +39,7 @@ class DBase
         foreach ($ids as $id) {
             $result[] = $this->getItemById($id);
         }
+        $this->base_connection->checkChunkCachingNeed();
         return $result;
     }
 
@@ -46,7 +47,7 @@ class DBase
      * @param int $id
      * @return array|null
      */
-    public function getItemById($id)
+    private function getItemById($id)
     {
         return $this->base_connection->getRecord($id);
     }

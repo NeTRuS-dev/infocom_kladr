@@ -86,9 +86,7 @@ class DBaseEntity
                 return null;
             }
             if ($this->current_chunk !== $range_of_current_number) {
-                if ($this->chunk_in_cache_is_correct === false) {
-                    $this->cache_storage->set("{$this->cache_prefix}.{$this->current_chunk}", $this->local_cached_data);
-                }
+                $this->checkChunkCachingNeed();
                 $this->current_chunk = $range_of_current_number;
                 $tmp = $this->cache_storage->get("{$this->cache_prefix}.{$range_of_current_number}");
                 if ($tmp === false) {
@@ -107,6 +105,13 @@ class DBaseEntity
                 $this->chunk_in_cache_is_correct = false;
                 return $record;
             }
+        }
+    }
+
+    public function checkChunkCachingNeed()
+    {
+        if ($this->chunk_in_cache_is_correct === false) {
+            $this->cache_storage->set("{$this->cache_prefix}.{$this->current_chunk}", $this->local_cached_data);
         }
     }
 
@@ -157,6 +162,7 @@ class DBaseEntity
                 break;
             }
         }
+        $this->checkChunkCachingNeed();
         return $results;
     }
 
