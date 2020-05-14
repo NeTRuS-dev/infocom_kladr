@@ -269,7 +269,7 @@ class SearchModel extends Model
                 foreach ($previous_step_codes as $prev) {
                     $prev_code = $prev['CODE'];
                     if ($this->starts_with($item['CODE'], $prev_code)) {
-                        $name_chain = $prev['NAME_CHAIN'] . '->' . $name_chain;
+                        $name_chain = $prev['NAME_CHAIN'] . ' ->' . $name_chain;
                         break;
                     }
                 }

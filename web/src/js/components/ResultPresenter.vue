@@ -3,42 +3,46 @@
         <div class="content">
             <template v-if="withChain">
                 <div class="row-presenter name-chain">
-                    <div class="name">Полный путь : </div>
-                    <div class="value">{{`${content.NAME_CHAIN} -> ${content.NAME}`}}</div>
+                    <div class="name">Полный путь :</div>
+                    <div class="value">{{`${content.NAME_CHAIN} -> ${content.SOCR} ${content.NAME}`}}</div>
                 </div>
             </template>
             <template v-else-if="content.NAME">
                 <div class="row-presenter name">
-                    <div class="name">Название : </div>
+                    <div class="name">Название :</div>
                     <div class="value">{{content.NAME}}</div>
                 </div>
             </template>
             <template v-if="content.SOCR">
                 <div class="row-presenter socr">
-                    <div class="name">Сокращение : </div>
+                    <div class="name">Сокращение :</div>
                     <div class="value">{{content.SOCR}}</div>
                 </div>
             </template>
             <template v-if="content.CODE">
                 <div class="row-presenter code">
-                    <div class="name">Код КЛАДР : </div>
+                    <div class="name">Код КЛАДР :</div>
                     <div class="value">{{content.CODE}}</div>
                 </div>
             </template>
             <template v-if="content.INDEX">
                 <div class="row-presenter index">
-                    <div class="name">Почтовый ндекс : </div>
+                    <div class="name">Почтовый индекс :</div>
                     <div class="value">{{content.INDEX}}</div>
                 </div>
             </template>
-            <div class="row-presenter gninmb">
-                <div class="name">Код налоговой : </div>
-                <div class="value">{{content.GNINMB}}</div>
-            </div>
-            <div class="row-presenter ocatd">
-                <div class="name">Код ОКАТО : </div>
-                <div class="value">{{content.OCATD}}</div>
-            </div>
+            <template v-if="content.GNINMB">
+                <div class="row-presenter gninmb">
+                    <div class="name">Код налоговой :</div>
+                    <div class="value">{{content.GNINMB}}</div>
+                </div>
+            </template>
+            <template v-if="content.OCATD">
+                <div class="row-presenter ocatd">
+                    <div class="name">Код ОКАТО :</div>
+                    <div class="value">{{content.OCATD}}</div>
+                </div>
+            </template>
         </div>
     </div>
 </template>
@@ -49,7 +53,7 @@
         props: {
             content: {
                 required: true,
-                type: Array
+                type: Object
             },
             isFirst: {
                 type: Boolean,
@@ -58,7 +62,7 @@
         },
         computed: {
             withChain() {
-                return this.content.NAME_CHAIN && this.content.NAME
+                return this.content.NAME_CHAIN && this.content.SOCR && this.content.NAME
             }
         },
     }
@@ -67,7 +71,10 @@
 <style lang="scss" scoped>
     .content {
         width: 100%;
-        height: 70%;
+        height: 15rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
     }
 
     .row-presenter {
