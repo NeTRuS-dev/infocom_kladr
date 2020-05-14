@@ -31,8 +31,8 @@ abstract class AbstractChecker
      */
     protected function starts_with($target, $searching_string)
     {
-        $length = strlen($searching_string);
-        return (substr($target, 0, $length) === $searching_string);
+        $length = mb_strlen($searching_string);
+        return (mb_strtolower(mb_substr($target, 0, $length)) === mb_strtolower($searching_string));
     }
 
     /**
@@ -42,11 +42,11 @@ abstract class AbstractChecker
      */
     protected function ends_with($target, $searching_string)
     {
-        $len = strlen($searching_string);
-        if ($len == 0) {
+        $len = mb_strlen($searching_string);
+        if ($len === 0) {
             return true;
         }
-        return (substr($target, -$len) === $searching_string);
+        return (mb_strtolower(mb_substr($target, -$len)) === mb_strtolower($searching_string));
     }
 
     /**
@@ -56,7 +56,7 @@ abstract class AbstractChecker
      */
     protected function in_string($target, $searching_string)
     {
-        return (strpos($target, $searching_string) !== false);
+        return (mb_stripos($target, $searching_string) !== false);
     }
 
     /**
@@ -66,7 +66,7 @@ abstract class AbstractChecker
      */
     protected function strings_are_equal($target, $searching_string)
     {
-        return ($target === $searching_string);
+        return (mb_strtolower($target) === mb_strtolower($searching_string));
     }
 
 }

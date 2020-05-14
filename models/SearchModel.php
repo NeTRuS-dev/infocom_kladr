@@ -277,7 +277,7 @@ class SearchModel extends Model
             if (!empty($previous_step_codes)) {
                 foreach ($previous_step_codes as $prev) {
                     $prev_code = $prev['CODE'];
-                    if (substr($item['CODE'], 0, strlen($prev_code)) === $prev_code) {
+                    if ($this->starts_with($item['CODE'], $prev_code)) {
                         $name_chain = $prev['NAME_CHAIN'] . '->' . $name_chain;
                         break;
                     }
@@ -289,6 +289,12 @@ class SearchModel extends Model
             ];
         }
         return array_unique($result, SORT_REGULAR);
+    }
+
+    private function starts_with($target, $searching_string)
+    {
+        $length = mb_strlen($searching_string);
+        return (mb_strtolower(mb_substr($target, 0, $length)) === mb_strtolower($searching_string));
     }
 
     /**
@@ -304,7 +310,7 @@ class SearchModel extends Model
         foreach ($result_rows as &$result) {
             foreach ($code_and_name_chains as $chain) {
                 $chain_code = $chain['CODE'];
-                if (substr($result['CODE'], 0, strlen($chain_code)) === $chain_code) {
+                if ($this->starts_with($result['CODE'], $chain_code)) {
                     $result['NAME_CHAIN'] = $chain['NAME_CHAIN'];
                     break;
                 }
