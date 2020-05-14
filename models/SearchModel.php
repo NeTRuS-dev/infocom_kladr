@@ -238,14 +238,7 @@ class SearchModel extends Model
      */
     private function generateSubjectNameChecker(string $name): AbstractChecker
     {
-        $lower_name = mb_strtolower($name);
-        $capitalized_name_only_first = ucfirst($lower_name);
-        $capitalized_name_all_words = ucwords($lower_name);
-        return new CompositeOrModeChecker([
-            new ContainsStringChecker('NAME', $capitalized_name_only_first),
-            new ContainsStringChecker('NAME', $name),
-            new ContainsStringChecker('NAME', $capitalized_name_all_words)
-        ]);
+        return new ContainsStringChecker('NAME', $name);
     }
 
     /**
@@ -254,12 +247,10 @@ class SearchModel extends Model
      */
     private function generateHouseNameChecker(string $name): AbstractChecker
     {
-        $lower_name = mb_strtolower($name);
-
         return new CompositeOrModeChecker([
-            new StartsWithStringChecker('NAME', $lower_name . ','),
-            new EndsWithStringChecker('NAME', ',' . $lower_name),
-            new ContainsStringChecker('NAME', ',' . $lower_name . ',')
+            new StartsWithStringChecker('NAME', $name . ','),
+            new EndsWithStringChecker('NAME', ',' . $name),
+            new ContainsStringChecker('NAME', ',' . $name . ',')
         ]);
     }
 
