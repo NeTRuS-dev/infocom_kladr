@@ -21,14 +21,13 @@ $config = [
                 'application/json' => 'yii\web\JsonParser',
             ]
         ],
+        //TODO it's important to set max redis memory to 2048mb
         'cache' => [
-            'class' => 'yii\caching\MemCache',
-            'servers' => [
-                [
-                    'host' => 'localhost',
-                    'port' => 11211,
-                    'weight' => 100,
-                ]
+            'class' => 'yii\redis\Cache',
+            'redis' => [
+                'hostname' => 'localhost',
+                'port' => 6379,
+                'database' => 0,
             ]
         ],
         'errorHandler' => [

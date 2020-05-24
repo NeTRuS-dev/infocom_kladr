@@ -1,5 +1,5 @@
 <?php
 
 return [
-    'chunk_size' => 4000,
+    'chunk_size' => 10000,
 ];
