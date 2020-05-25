@@ -84,21 +84,7 @@ class SearchModel extends Model
         $code_and_name_chains = null;
         //searching for area
         if (!empty($this->area)) {
-            $cache_search_string = "{$this->KLADR_BASE->getFilePrefix()}.area_cached";
-            $tmp_request = $this->cache_storage->get($cache_search_string);
-            if ($tmp_request !== false) {
-                $query_result = $tmp_request;
-            } else {
-                $built_query[] = new SearchParameter(
-                    new EqualToAnyRowOfArrayChecker(
-                        'SOCR',
-                        $this->getTypes(SubjectTypes::AREA),
-                        'SCNAME'));
-                $query_result = $this->KLADR_BASE->execQuery($built_query);
-                $built_query = [];
-                $this->cache_storage->set($cache_search_string, $query_result);
-            }
-
+            $query_result = $this->getEntitiesWithPassedType(SubjectTypes::AREA);
             $built_query[] = new SearchParameter(
                 $this->generateSubjectNameChecker($this->area),
                 1, $query_result
@@ -122,16 +108,8 @@ class SearchModel extends Model
                 $start_index = $query_result[0];
             }
             //getting all districts
-            $cache_search_string = "{$this->KLADR_BASE->getFilePrefix()}.district_cached";
-            $tmp_request = $this->cache_storage->get($cache_search_string);
-            if ($tmp_request !== false) {
-                $query_result = $tmp_request;
-            } else {
-                $built_query[] = new SearchParameter(new EqualToAnyRowOfArrayChecker('SOCR', $this->getTypes(SubjectTypes::DISTRICT), 'SCNAME'));
-                $query_result = $this->KLADR_BASE->execQuery($built_query);
-                $built_query = [];
-                $this->cache_storage->set($cache_search_string, $query_result);
-            }
+            $query_result = $this->getEntitiesWithPassedType(SubjectTypes::DISTRICT);
+
             if (!is_null($code_and_name_chains)) {
                 $built_query[] = new SearchParameter(new CompositeAndModeChecker([
                     new StartsWithAnyStringOfArrayChecker('CODE', $code_and_name_chains, 'CODE'),
@@ -158,17 +136,7 @@ class SearchModel extends Model
             $start_index = $query_result[0];
 
             //getting all cities
-            $cache_search_string = "{$this->KLADR_BASE->getFilePrefix()}.city_cached";
-            $tmp_request = $this->cache_storage->get($cache_search_string);
-            if ($tmp_request !== false) {
-                $query_result = $tmp_request;
-            } else {
-                $small_territory_and_cities = [...$this->getTypes(SubjectTypes::SMALL_TER), ...$this->getTypes(SubjectTypes::CITY)];
-                $built_query[] = new SearchParameter(new EqualToAnyRowOfArrayChecker('SOCR', $small_territory_and_cities, 'SCNAME'));
-                $query_result = $this->KLADR_BASE->execQuery($built_query); //all cities
-                $built_query = [];
-                $this->cache_storage->set($cache_search_string, $query_result);
-            }
+            $query_result = $this->getEntitiesWithPassedType(SubjectTypes::CITY);
 
             $built_query[] = new SearchParameter(new CompositeAndModeChecker([
                 new StartsWithAnyStringOfArrayChecker('CODE', $code_and_name_chains, 'CODE'),
@@ -206,7 +174,6 @@ class SearchModel extends Model
         if (!empty($this->house)) {
 
             //useless to select types for street and cache, just begin comparing
-
             $built_query[] = new SearchParameter(new CompositeAndModeChecker([
                 new StartsWithAnyStringOfArrayChecker('CODE', $code_and_name_chains, 'CODE'),
                 $this->generateHouseNameChecker($this->house)
@@ -214,9 +181,61 @@ class SearchModel extends Model
             $query_result = $this->DOMA_BASE->execQuery($built_query);
             $result_rows = $this->DOMA_BASE->getRowsByIds($query_result);
         }
-
-
         return $this->mergeWithNameChains($code_and_name_chains, $result_rows);
+    }
+
+    /**
+     * @param int $level
+     * @return int[]
+     */
+    private function getEntitiesWithPassedType(int $level)
+    {
+        $query_result = [];
+        switch ($level) {
+            case SubjectTypes::AREA:
+                $query_result = $this->makeCacheableTypeQuery(
+                    $this->KLADR_BASE,
+                    "{$this->KLADR_BASE->getFilePrefix()}.area_cached",
+                    new SearchParameter(
+                        new EqualToAnyRowOfArrayChecker(
+                            'SOCR',
+                            $this->getTypes(SubjectTypes::AREA),
+                            'SCNAME'
+                        )
+                    )
+                );
+                break;
+
+            case SubjectTypes::DISTRICT:
+                $query_result = $this->makeCacheableTypeQuery(
+                    $this->KLADR_BASE,
+                    "{$this->KLADR_BASE->getFilePrefix()}.district_cached",
+                    new SearchParameter(
+                        new EqualToAnyRowOfArrayChecker(
+                            'SOCR',
+                            $this->getTypes(SubjectTypes::DISTRICT),
+                            'SCNAME'
+                        )
+                    )
+                );
+                break;
+            case SubjectTypes::CITY:
+            case SubjectTypes::SMALL_TER:
+                $small_territory_and_cities = [...$this->getTypes(SubjectTypes::SMALL_TER), ...$this->getTypes(SubjectTypes::CITY)];
+                $query_result = $this->makeCacheableTypeQuery(
+                    $this->KLADR_BASE,
+                    "{$this->KLADR_BASE->getFilePrefix()}.city_cached",
+                    new SearchParameter(
+                        new EqualToAnyRowOfArrayChecker(
+                            'SOCR',
+                            $small_territory_and_cities,
+                            'SCNAME'
+                        )
+                    )
+                );
+                break;
+        }
+        return $query_result;
     }
 
     /**
@@ -225,15 +244,30 @@ class SearchModel extends Model
      */
     private function getTypes($type)
     {
-        $cache_search_string = "{$this->SOCRBASE->getFilePrefix()}.type_cache.{$type}";
+        $result = $this->makeCacheableTypeQuery(
+            $this->SOCRBASE,
+            "{$this->SOCRBASE->getFilePrefix()}.type_cache.{$type}",
+            new SearchParameter(new EqualToStringChecker('LEVEL', "$type"))
+        );
+        return $this->SOCRBASE->getRowsByIds($result);
+    }
+
+    /**
+     * @param DBase $connection
+     * @param string $cache_search_string
+     * @param SearchParameter $searchParameter
+     * @return int[]
+     */
+    private function makeCacheableTypeQuery(DBase $connection, string $cache_search_string, SearchParameter $searchParameter)
+    {
         $tmp_request = $this->cache_storage->get($cache_search_string);
         if ($tmp_request !== false) {
-            $result = $tmp_request;
+            $query_result = $tmp_request;
         } else {
-            $result = $this->SOCRBASE->execQuery([new SearchParameter(new EqualToStringChecker('LEVEL', "$type"))]);
-            $this->cache_storage->set($cache_search_string, $result);
+            $query_result = $connection->execQuery([$searchParameter]);
+            $this->cache_storage->set($cache_search_string, $query_result);
         }
-        return $this->SOCRBASE->getRowsByIds($result);
+        return $query_result;
     }
 
     /**
@@ -272,7 +306,7 @@ class SearchModel extends Model
             if (!empty($previous_step_codes)) {
                 foreach ($previous_step_codes as $prev) {
                     $prev_code = $prev['CODE'];
-                    if ($this->starts_with($item['CODE'], $prev_code)) {
+                    if ((new StartsWithStringChecker('CODE', $prev_code))->check($item)) {
                         $name_chain = $prev['NAME_CHAIN'] . ' ->' . $name_chain;
                         break;
                     }
@@ -286,16 +320,6 @@ class SearchModel extends Model
         return array_unique($result, SORT_REGULAR);
     }
 
-    /**
-     * @param string $target
-     * @param string $searching_string
-     * @return bool
-     */
-    private function starts_with($target, $searching_string)
-    {
-        $length = mb_strlen($searching_string);
-        return (mb_strtolower(mb_substr($target, 0, $length)) === mb_strtolower($searching_string));
-    }
 
     /**
      * @param array $code_and_name_chains
@@ -310,7 +334,7 @@ class SearchModel extends Model
         foreach ($result_rows as &$result) {
             foreach ($code_and_name_chains as $chain) {
                 $chain_code = $chain['CODE'];
-                if ($this->starts_with($result['CODE'], $chain_code)) {
+                if ((new StartsWithStringChecker('CODE', $chain_code))->check($result)) {
                     $result['NAME_CHAIN'] = $chain['NAME_CHAIN'];
                     break;
                 }
