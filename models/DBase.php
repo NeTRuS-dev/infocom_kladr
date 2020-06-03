@@ -5,6 +5,7 @@ namespace app\models;
 
 
 use Yii;
+use yii\base\ErrorException;
 
 class DBase
 {
@@ -14,6 +15,7 @@ class DBase
     /**
      * DBase constructor.
      * @param string $filename
+     * @throws ErrorException
      */
     public function __construct($filename)
     {
@@ -66,10 +68,14 @@ class DBase
 
     /**
      * @param string $filename
+     * @throws ErrorException
      */
     private function load($filename)
     {
         $file = $this->makeFullPath($filename);
+        if (!file_exists($file)) {
+            throw new ErrorException('Файл ' . $filename . ' не существует');
+        }
         $resource = dbase_open($file, 0);
         $this->base_connection = new DBaseEntity($resource, pathinfo($file, PATHINFO_FILENAME));
     }

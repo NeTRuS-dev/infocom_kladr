@@ -93,6 +93,11 @@
                     },
                     body: JSON.stringify(data)
                 });
+                if (!response.ok) {
+                    console.log('На сервере произошла ошибка ' + response.status)
+                    this.waiting_for_response = false
+                    this.presenting_results = false
+                }
                 let fetchedData = await response.json()
                 if (fetchedData.errors) {
                     this.errors = fetchedData.errors
