@@ -1,7 +1,7 @@
 <template>
     <div id="results" class="carousel slide" data-interval="false" v-if="resultsToPresent.length">
         <div class="carousel-inner" role="listbox">
-            <result-presenter v-for="(result, index) in resultsToPresent" :key="result.CODE" :content="result"
+            <result-presenter v-for="(result, index) in resultsToPresent" :key="result.id" :content="result"
                               :is-first="index===0"></result-presenter>
         </div>
         <a v-if="resultsToPresent.length > 1" class="carousel-control-prev" href="#results" role="button"

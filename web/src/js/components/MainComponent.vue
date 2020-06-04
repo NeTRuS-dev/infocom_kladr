@@ -57,7 +57,8 @@
                     holder="Введите номер дома">Дом
             </form-group-component>
             <div class="w-100 d-flex justify-content-center">
-                <input type="submit" value="Найти" class="btn btn-primary" @click.prevent="onSubmitClick">
+                <input type="submit" value="Вывести данные по выбранным субъектам" class="btn btn-primary"
+                       @click.prevent="onSubmitClick">
             </div>
         </form>
         <loading-spinner v-if="waiting_for_response"></loading-spinner>
@@ -111,43 +112,108 @@
         },
         async created() {
             this.waiting_for_response = true
-            let data = {}
+            let data = {data: {}}
             let fetchedData = (await this.sendRequest(data))
             if (fetchedData.errors) {
                 this.waiting_for_response = false
                 this.presenting_results = false
 
             } else {
-                this.variants.area = fetchedData
+                this.variants.area = this.markAsMatchedAll(fetchedData)
                 this.waiting_for_response = false
             }
         },
         methods: {
-            async onElemSelection(data) {
+            markAsMatchedAll(data) {
+                return data.map((item) => {
+                    item.matches = true
+                    return item
+                })
+            },
+            async onElemSelection(elem) {
+                this.waiting_for_response = true
                 this.focusedBlock = '';
-                let blockName = data.blockName
-                let value = data.value
+                let fetchedData = {};
+                let blockName = elem.blockName
+                let value = elem.value
+                let data = {};
                 switch (blockName) {
                     case 'area':
                         this.prevIsDoneForDistrict = true
                         this.selected.area = value
+                        data = {
+                            data: {
+                                parent_subject: value,
+                                get_districts: true
+                            }
+                        }
+                        fetchedData = (await this.sendRequest(data))
+                        if (fetchedData.errors) {
+                            this.waiting_for_response = false
+                            this.presenting_results = false
+                        } else {
+                            this.variants.district = fetchedData
+                            this.waiting_for_response = false
+                        }
                         break
                     case 'district':
                         this.prevIsDoneForCity = true
                         this.selected.district = value
 
+                        data = {
+                            data: {
+                                parent_subject: value,
+                                get_cities: true
+                            }
+                        }
+                        fetchedData = (await this.sendRequest(data))
+                        if (fetchedData.errors) {
+                            this.waiting_for_response = false
+                            this.presenting_results = false
+                        } else {
+                            this.variants.city = fetchedData
+                            this.waiting_for_response = false
+                        }
                         break
                     case 'city':
                         this.prevIsDoneForStreet = true
                         this.selected.city = value
-
+                        data = {
+                            data: {
+                                parent_subject: value,
+                                get_streets: true
+                            }
+                        }
+                        fetchedData = (await this.sendRequest(data))
+                        if (fetchedData.errors) {
+                            this.waiting_for_response = false
+                            this.presenting_results = false
+                        } else {
+                            this.variants.street = fetchedData
+                            this.waiting_for_response = false
+                        }
                         break
                     case 'street':
                         this.prevIsDoneForHouse = true
                         this.selected.street = value
+                        data = {
+                            data: {
+                                parent_subject: value,
+                                get_houses: true
+                            }
+                        }
+                        fetchedData = (await this.sendRequest(data))
+                        if (fetchedData.errors) {
+                            this.waiting_for_response = false
+                            this.presenting_results = false
+                        } else {
+                            this.variants.house = fetchedData
+                            this.waiting_for_response = false
+                        }
                         break
                     case 'house':
                         this.selected.house = value
+                        this.waiting_for_response = false
                         break
                 }
             },
@@ -168,25 +234,35 @@
                 return (await response.json())
 
             },
-            async onSubmitClick() {
+            onSubmitClick() {
+                if (!this.selected.area) {
+                    return
+                }
                 this.waiting_for_response = true
-                let data = {
-                    area: this.area,
-                    district: this.district,
-                    city: this.city,
-                    street: this.street,
-                    house: this.house,
+                this.dataToPresent = this.buildDataToPresent()
+                this.waiting_for_response = false
+                this.presenting_results = true
+            },
+            buildDataToPresent() {
+                let chain = ''
+                let lastSelected = this.selected.area
+                if (this.selected.district) {
+                    chain += `${this.selected.area.SOCR} ${this.selected.area.NAME}`
+                    lastSelected = this.selected.district
                 }
-                let fetchedData = (await this.sendRequest(data))
-                if (fetchedData.errors) {
-                    this.waiting_for_response = false
-                    this.presenting_results = false
-
-                } else {
-                    this.dataToPresent = fetchedData
-                    this.waiting_for_response = false
-                    this.presenting_results = true
+                if (this.selected.city) {
+                    chain += ` -> ${this.selected.district.SOCR} ${this.selected.district.NAME}`
+                    lastSelected = this.selected.city
                 }
+                if (this.selected.street) {
+                    chain += ` -> ${this.selected.city.SOCR} ${this.selected.city.NAME}`
+                    lastSelected = this.selected.street
+                }
+                if (this.selected.house) {
+                    chain += ` -> ${this.selected.street.SOCR} ${this.selected.street.NAME}`
+                    lastSelected = this.selected.house
+                }
+                return [{NAME_CHAIN: chain, ...lastSelected}]
             },
             newQuery() {
                 this.presenting_results = false
@@ -195,32 +271,56 @@
                 this.city = ''
                 this.street = ''
                 this.house = ''
+                this.prevIsDoneForArea = true
+                this.prevIsDoneForDistrict = false
+                this.prevIsDoneForCity = false
+                this.prevIsDoneForStreet = false
+                this.prevIsDoneForHouse = false
+                this.variants = {
+                    area: this.variants.area,
+                    district: [],
+                    city: [],
+                    street: [],
+                    house: [],
+                };
+                this.selected = {
+                    area: undefined,
+                    district: undefined,
+                    city: undefined,
+                    street: undefined,
+                    house: undefined
+                };
             },
             selectVariants(blockName) {
                 switch (blockName) {
                     case 'area':
-                        this.variants.area = this.variants.area.filter((elem) => {
-                            return elem.NAME.toLowerCase().indexOf(this.area.toLowerCase()) === -1
+                        this.variants.area = this.variants.area.map((elem) => {
+                            elem.matches = elem.NAME.toLowerCase().indexOf(this.area.toLowerCase()) !== -1
+                            return elem
                         })
                         break
                     case 'district':
-                        this.variants.district = this.variants.district.filter((elem) => {
-                            return elem.NAME.toLowerCase().indexOf(this.district.toLowerCase()) === -1
+                        this.variants.district = this.variants.district.map((elem) => {
+                            elem.matches = elem.NAME.toLowerCase().indexOf(this.district.toLowerCase()) !== -1
+                            return elem
                         })
                         break
                     case 'city':
-                        this.variants.city = this.variants.city.filter((elem) => {
-                            return elem.NAME.toLowerCase().indexOf(this.city.toLowerCase()) === -1
+                        this.variants.city = this.variants.city.map((elem) => {
+                            elem.matches = elem.NAME.toLowerCase().indexOf(this.city.toLowerCase()) !== -1
+                            return elem
                         })
                         break
                     case 'street':
-                        this.variants.street = this.variants.street.filter((elem) => {
-                            return elem.NAME.toLowerCase().indexOf(this.street.toLowerCase()) === -1
+                        this.variants.street = this.variants.street.map((elem) => {
+                            elem.matches = elem.NAME.toLowerCase().indexOf(this.street.toLowerCase()) !== -1
+                            return elem
                         })
                         break
                     case 'house':
-                        this.variants.house = this.variants.house.filter((elem) => {
-                            return elem.NAME.toLowerCase().indexOf(this.house.toLowerCase()) === -1
+                        this.variants.house = this.variants.house.map((elem) => {
+                            elem.matches = elem.NAME.toLowerCase().indexOf(this.house.toLowerCase()) !== -1
+                            return elem
                         })
                         break
                 }

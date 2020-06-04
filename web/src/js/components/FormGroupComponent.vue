@@ -12,7 +12,7 @@
                :placeholder="holder">
         <ul class="list-group" v-show="isOnFocus">
             <li class="list-group-item"
-                v-for="(variant, index) in variantsToChoose" :key="index"
+                v-for="(variant, index) in matchesVariants" :key="index"
                 @click.prevent="elemSelectionEvent(variant)">
                 {{variant.NAME}}
             </li>
@@ -36,9 +36,7 @@
             focusedBlock: String,
         },
         data() {
-            return {
-
-            }
+            return {}
         },
         methods: {
             onInput(event) {
@@ -56,11 +54,16 @@
             }
         },
         computed: {
+            matchesVariants() {
+                return this.variantsToChoose.filter((elem) => {
+                    return elem.matches === true
+                })
+            },
             isOnFocus() {
-                return this.blockName === this.focusedBlock
+                return ((this.blockName === this.focusedBlock) && this.variantsToChoose)
             },
             shouldBeShown() {
-                return !this.previousDone && this.isOnFocus
+                return (!this.previousDone && this.isOnFocus)
             }
         }
     }

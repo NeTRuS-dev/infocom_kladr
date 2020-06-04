@@ -23,7 +23,7 @@ class SearchModel extends Model
     public string $city = '';
     public string $street = '';
     public string $house = '';
-//    public array $parent_subject=[];
+    public array $data = [];
 
     private bool $is_validated = false;
 
@@ -48,8 +48,7 @@ class SearchModel extends Model
     {
         return [
             [['area', 'district', 'city', 'street', 'house'], 'trim', 'skipOnEmpty' => true],
-            ['area', 'required', 'message' => 'Укажите область'],
-//            ['parent_subject', 'safe'],
+            ['data', 'safe'],
         ];
     }
 
@@ -66,12 +65,55 @@ class SearchModel extends Model
 
     public function toDoSearch()
     {
-        // TODO IMPLEMENT
-        if (true) {
+        if (!isset($this->data['parent_subject'])) {
             return $this->KLADR_BASE->getRowsByIds($this->getEntitiesWithPassedType(SubjectTypes::AREA));
-        } else {
-            return $this->collectSearchResult();
+        } elseif (isset($this->data['get_districts'])) {
+            $start_index = $this->data['parent_subject']['id'];
+            //getting all districts
+            $query_result = $this->getEntitiesWithPassedType(SubjectTypes::DISTRICT);
+            $built_query = [];
+            $built_query[] = new SearchParameter(
+                new StartsWithAnyStringOfArrayChecker(
+                    'CODE',
+                    [['CODE' => $this->getCodeSlice($this->data['parent_subject'], SubjectTypes::AREA)]]
+                    , 'CODE'
+                ), $start_index, $query_result);
+            $query_result = $this->KLADR_BASE->execQuery($built_query);
+            return $this->KLADR_BASE->getRowsByIds($query_result);
+        } elseif (isset($this->data['get_cities'])) {
+            $start_index = $this->data['parent_subject']['id'];
+            //getting all cities
+            $query_result = $this->getEntitiesWithPassedType(SubjectTypes::CITY);
+            $built_query[] = new SearchParameter(
+                new StartsWithAnyStringOfArrayChecker(
+                    'CODE',
+                    [['CODE' => $this->getCodeSlice($this->data['parent_subject'], SubjectTypes::DISTRICT)]]
+                    , 'CODE'
+                ), $start_index, $query_result);
+            $query_result = $this->KLADR_BASE->execQuery($built_query);
+            return $this->KLADR_BASE->getRowsByIds($query_result);
+
+        } elseif (isset($this->data['get_streets'])) {
+            //useless to select types for street and cache, just begin comparing
+            $built_query[] = new SearchParameter(
+                new StartsWithAnyStringOfArrayChecker('CODE',
+                    [['CODE' => $this->getCodeSlice($this->data['parent_subject'], SubjectTypes::CITY)]]
+                    , 'CODE')
+            );
+            $query_result = $this->STREET_BASE->execQuery($built_query);
+            return $this->STREET_BASE->getRowsByIds($query_result);
+
+        } elseif (isset($this->data['get_houses'])) {
+            //useless to select types for street and cache, just begin comparing
+            $built_query[] = new SearchParameter(
+                new StartsWithAnyStringOfArrayChecker('CODE',
+                    [['CODE' => $this->getCodeSlice($this->data['parent_subject'], SubjectTypes::STREET)]]
+                    , 'CODE')
+            );
+            $query_result = $this->DOMA_BASE->execQuery($built_query);
+            return $this->DOMA_BASE->getRowsByIds($query_result);
         }
+        return [];
     }
 
     /**

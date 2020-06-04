@@ -43,7 +43,9 @@ class DBase
     {
         $result = [];
         foreach ($ids as $id) {
-            $result[] = $this->getItemById($id);
+            $tmp = $this->getItemById($id);
+            $tmp['id'] = $id;
+            $result[] = $tmp;
         }
         $this->base_connection->checkChunkCachingNeed();
         return $result;
