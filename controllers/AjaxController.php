@@ -31,7 +31,8 @@ class AjaxController extends Controller
         set_time_limit(0);
 
         $query = new SearchModel();
-        if ($query->load(Yii::$app->request->post(), '') && $query->validate()) {
+        $query->load(Yii::$app->request->post(), '');
+        if ($query->validate()) {
             return $this->asJson($query->toDoSearch());
         } else {
             return $this->asJson(['errors' => $query->getFirstErrors()]);

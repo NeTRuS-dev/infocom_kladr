@@ -23,6 +23,7 @@ class SearchModel extends Model
     public string $city = '';
     public string $street = '';
     public string $house = '';
+//    public array $parent_subject=[];
 
     private bool $is_validated = false;
 
@@ -46,13 +47,9 @@ class SearchModel extends Model
     public function rules()
     {
         return [
-            [['area', 'district', 'city', 'street', 'house'], 'trim'],
-            ['area', 'required', 'when' => function ($model) {
-                return empty($model->district);
-            }, 'message' => 'Заполните область'],
-            ['district', 'required', 'when' => function ($model) {
-                return empty($model->area);
-            }, 'message' => 'Или район'],
+            [['area', 'district', 'city', 'street', 'house'], 'trim', 'skipOnEmpty' => true],
+            ['area', 'required', 'message' => 'Укажите область'],
+//            ['parent_subject', 'safe'],
         ];
     }
 
@@ -69,7 +66,12 @@ class SearchModel extends Model
 
     public function toDoSearch()
     {
-        return $this->collectSearchResult();
+        // TODO IMPLEMENT
+        if (true) {
+            return $this->KLADR_BASE->getRowsByIds($this->getEntitiesWithPassedType(SubjectTypes::AREA));
+        } else {
+            return $this->collectSearchResult();
+        }
     }
 
     /**
@@ -87,6 +89,8 @@ class SearchModel extends Model
          * @var array|null $code_and_name_chains
          */
         $code_and_name_chains = null;
+
+
         //searching for area
         if (!empty($this->area)) {
             $query_result = $this->getEntitiesWithPassedType(SubjectTypes::AREA);

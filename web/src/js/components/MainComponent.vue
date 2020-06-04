@@ -2,32 +2,57 @@
     <div class="main">
         <form @submit.prevent v-if="showForm">
             <form-group-component
-                    :error="errors.area"
+                    @focus-changed="focusedBlock=$event"
+                    :focused-block="focusedBlock"
+                    :previous-done="prevIsDoneForArea"
                     v-model="area"
+                    @need-to-recalc-variants="selectVariants"
+                    :variants-to-choose="variants.area"
+                    @elem-selected="onElemSelection"
                     block-name="area"
                     holder="Введите область">Область
             </form-group-component>
             <form-group-component
-                    :error="errors.district"
+                    @focus-changed="focusedBlock=$event"
+                    :focused-block="focusedBlock"
+                    :previous-done="prevIsDoneForDistrict"
                     v-model="district"
-                    block-name="area"
+                    @need-to-recalc-variants="selectVariants"
+                    :variants-to-choose="variants.district"
+                    @elem-selected="onElemSelection"
+                    block-name="district"
                     holder="Введите район">Район
             </form-group-component>
             <form-group-component
-                    :error="errors.city"
+                    @focus-changed="focusedBlock=$event"
+                    :focused-block="focusedBlock"
+                    :previous-done="prevIsDoneForCity"
                     v-model="city"
+                    @need-to-recalc-variants="selectVariants"
+                    :variants-to-choose="variants.city"
+                    @elem-selected="onElemSelection"
                     block-name="city"
                     holder="Введите город">Город
             </form-group-component>
             <form-group-component
-                    :error="errors.street"
+                    @focus-changed="focusedBlock=$event"
+                    :focused-block="focusedBlock"
+                    :previous-done="prevIsDoneForStreet"
                     v-model="street"
+                    @need-to-recalc-variants="selectVariants"
+                    :variants-to-choose="variants.street"
+                    @elem-selected="onElemSelection"
                     block-name="street"
                     holder="Введите улицу">Улица
             </form-group-component>
             <form-group-component
-                    :error="errors.house"
+                    @focus-changed="focusedBlock=$event"
+                    :focused-block="focusedBlock"
+                    :previous-done="prevIsDoneForHouse"
                     v-model="house"
+                    @need-to-recalc-variants="selectVariants"
+                    :variants-to-choose="variants.house"
+                    @elem-selected="onElemSelection"
                     block-name="house"
                     holder="Введите номер дома">Дом
             </form-group-component>
@@ -54,37 +79,79 @@
         name: "MainComponent",
         data() {
             return {
+                focusedBlock: '',
                 area: '',
                 district: '',
                 city: '',
                 street: '',
                 house: '',
-                errors: {
-                    area: '',
-                    district: '',
-                    city: '',
-                    street: '',
-                    house: '',
+                prevIsDoneForArea: true,
+                prevIsDoneForDistrict: false,
+                prevIsDoneForCity: false,
+                prevIsDoneForStreet: false,
+                prevIsDoneForHouse: false,
+                variants: {
+                    area: [],
+                    district: [],
+                    city: [],
+                    street: [],
+                    house: [],
+                },
+                selected: {
+                    area: undefined,
+                    district: undefined,
+                    city: undefined,
+                    street: undefined,
+                    house: undefined,
                 },
                 waiting_for_response: false,
                 presenting_results: false,
                 dataToPresent: [],
             }
         },
-        methods: {
-            onSubmitClick() {
-                this.waiting_for_response = true
-                this.sendRequest()
-            },
-            async sendRequest() {
+        async created() {
+            this.waiting_for_response = true
+            let data = {}
+            let fetchedData = (await this.sendRequest(data))
+            if (fetchedData.errors) {
+                this.waiting_for_response = false
+                this.presenting_results = false
 
-                let data = {
-                    area: this.area,
-                    district: this.district,
-                    city: this.city,
-                    street: this.street,
-                    house: this.house,
+            } else {
+                this.variants.area = fetchedData
+                this.waiting_for_response = false
+            }
+        },
+        methods: {
+            async onElemSelection(data) {
+                this.focusedBlock = '';
+                let blockName = data.blockName
+                let value = data.value
+                switch (blockName) {
+                    case 'area':
+                        this.prevIsDoneForDistrict = true
+                        this.selected.area = value
+                        break
+                    case 'district':
+                        this.prevIsDoneForCity = true
+                        this.selected.district = value
+
+                        break
+                    case 'city':
+                        this.prevIsDoneForStreet = true
+                        this.selected.city = value
+
+                        break
+                    case 'street':
+                        this.prevIsDoneForHouse = true
+                        this.selected.street = value
+                        break
+                    case 'house':
+                        this.selected.house = value
+                        break
                 }
+            },
+            async sendRequest(data) {
                 let response = await fetch(ajaxUrl, {
                     method: "POST",
                     mode: 'cors',
@@ -98,9 +165,20 @@
                     this.waiting_for_response = false
                     this.presenting_results = false
                 }
-                let fetchedData = await response.json()
+                return (await response.json())
+
+            },
+            async onSubmitClick() {
+                this.waiting_for_response = true
+                let data = {
+                    area: this.area,
+                    district: this.district,
+                    city: this.city,
+                    street: this.street,
+                    house: this.house,
+                }
+                let fetchedData = (await this.sendRequest(data))
                 if (fetchedData.errors) {
-                    this.errors = fetchedData.errors
                     this.waiting_for_response = false
                     this.presenting_results = false
 
@@ -117,12 +195,34 @@
                 this.city = ''
                 this.street = ''
                 this.house = ''
-                this.errors = {
-                    area: '',
-                    district: '',
-                    city: '',
-                    street: '',
-                    house: '',
+            },
+            selectVariants(blockName) {
+                switch (blockName) {
+                    case 'area':
+                        this.variants.area = this.variants.area.filter((elem) => {
+                            return elem.NAME.toLowerCase().indexOf(this.area.toLowerCase()) === -1
+                        })
+                        break
+                    case 'district':
+                        this.variants.district = this.variants.district.filter((elem) => {
+                            return elem.NAME.toLowerCase().indexOf(this.district.toLowerCase()) === -1
+                        })
+                        break
+                    case 'city':
+                        this.variants.city = this.variants.city.filter((elem) => {
+                            return elem.NAME.toLowerCase().indexOf(this.city.toLowerCase()) === -1
+                        })
+                        break
+                    case 'street':
+                        this.variants.street = this.variants.street.filter((elem) => {
+                            return elem.NAME.toLowerCase().indexOf(this.street.toLowerCase()) === -1
+                        })
+                        break
+                    case 'house':
+                        this.variants.house = this.variants.house.filter((elem) => {
+                            return elem.NAME.toLowerCase().indexOf(this.house.toLowerCase()) === -1
+                        })
+                        break
                 }
             },
         },
