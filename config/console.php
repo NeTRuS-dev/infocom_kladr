@@ -12,6 +12,7 @@ $config = [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
         '@tests' => '@app/tests',
+        '@database' => '@app/kladr_db_folder',
     ],
     'components' => [
         //TODO it's important to set max redis memory to 2048mb
