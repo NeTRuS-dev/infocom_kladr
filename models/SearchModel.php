@@ -59,6 +59,11 @@ class SearchModel extends Model
     public function afterValidate()
     {
         parent::afterValidate();
+        $this->area = mb_convert_encoding($this->area, 'UTF-8');
+        $this->district = mb_convert_encoding($this->district, 'UTF-8');
+        $this->city = mb_convert_encoding($this->city, 'UTF-8');
+        $this->street = mb_convert_encoding($this->street, 'UTF-8');
+        $this->house = mb_convert_encoding($this->house, 'UTF-8');
         $this->is_validated = true;
     }
 
@@ -276,7 +281,15 @@ class SearchModel extends Model
      */
     private function generateSubjectNameChecker($name)
     {
-        return new ContainsStringChecker('NAME', $name);
+
+        $checker = null;
+        if (mb_substr($name, 0, 1) === mb_strtoupper(mb_substr($name, 0, 1)) && mb_substr($name, 1, 1) === mb_strtolower(mb_substr($name, 1, 1))) {
+            $checker = new StartsWithStringChecker('NAME', $name);
+
+        } else {
+            $checker = new ContainsStringChecker('NAME', $name);
+        }
+        return $checker;
     }
 
     /**
