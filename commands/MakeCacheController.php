@@ -37,6 +37,7 @@ class MakeCacheController extends Controller
             } catch (ErrorException $e) {
                 return ExitCode::UNSPECIFIED_ERROR;
             }
+            echo 'processing ' . $filename . PHP_EOL;
             $BASE->makeCache();
         }
         return ExitCode::OK;
