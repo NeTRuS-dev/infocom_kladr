@@ -14,8 +14,14 @@ $config = [
         '@tests' => '@app/tests',
     ],
     'components' => [
+        //TODO it's important to set max redis memory to 2048mb
         'cache' => [
-            'class' => 'yii\caching\FileCache',
+            'class' => 'yii\redis\Cache',
+            'redis' => [
+                'hostname' => 'localhost',
+                'port' => 6379,
+                'database' => 0,
+            ]
         ],
         'log' => [
             'targets' => [

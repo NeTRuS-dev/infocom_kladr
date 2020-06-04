@@ -154,7 +154,7 @@ class DBaseEntity
             $size = count($searching_array);
             $start_index = 0;
         }
-        for ($i = $start_index; $i < $size; $i++) {
+        for ($i = $start_index; $i < $size; ++$i) {
             $index = ($passed_arr_is_empty ? $i : $searching_array[$i]);
             if ($index < $start_actual_search_record_index) {
                 continue;

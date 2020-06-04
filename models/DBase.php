@@ -89,4 +89,15 @@ class DBase
         return Yii::getAlias('@database') . DIRECTORY_SEPARATOR . $filename;
     }
 
+    /**
+     * инициализация кеша
+     */
+    public function makeCache()
+    {
+        $size = $this->base_connection->getDatabaseSize();
+        for ($i = 1; $i <= $size; ++$i) {
+            $this->base_connection->getRecord($i);
+        }
+    }
+
 }

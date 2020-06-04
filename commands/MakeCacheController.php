@@ -7,6 +7,9 @@
 
 namespace app\commands;
 
+use app\models\DBase;
+use app\models\DBNameConstants;
+use Yii;
 use yii\console\Controller;
 use yii\console\ExitCode;
 
@@ -18,17 +21,22 @@ use yii\console\ExitCode;
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
  */
-class HelloController extends Controller
+class MakeCacheController extends Controller
 {
     /**
      * This command echoes what you have entered as the message.
-     * @param string $message the message to be echoed.
      * @return int Exit code
      */
-    public function actionIndex($message = 'hello world')
+    public function actionIndex()
     {
-        echo $message . "\n";
-
+        $KLADR_BASE = new DBase(DBNameConstants::KLADR);
+        $STREET_BASE = new DBase(DBNameConstants::STREET);
+        $SOCRBASE = new DBase(DBNameConstants::SOCRBASE);
+        $DOMA_BASE = new DBase(DBNameConstants::DOMA);
+        $KLADR_BASE->makeCache();
+        $STREET_BASE->makeCache();
+        $SOCRBASE->makeCache();
+        $DOMA_BASE->makeCache();
         return ExitCode::OK;
     }
 }
