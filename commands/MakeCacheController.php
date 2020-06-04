@@ -10,6 +10,7 @@ namespace app\commands;
 use app\models\DBase;
 use app\models\DBNameConstants;
 use Yii;
+use yii\base\ErrorException;
 use yii\console\Controller;
 use yii\console\ExitCode;
 
@@ -29,14 +30,15 @@ class MakeCacheController extends Controller
      */
     public function actionIndex()
     {
-        $KLADR_BASE = new DBase(DBNameConstants::KLADR);
-        $STREET_BASE = new DBase(DBNameConstants::STREET);
-        $SOCRBASE = new DBase(DBNameConstants::SOCRBASE);
-        $DOMA_BASE = new DBase(DBNameConstants::DOMA);
-        $KLADR_BASE->makeCache();
-        $STREET_BASE->makeCache();
-        $SOCRBASE->makeCache();
-        $DOMA_BASE->makeCache();
+        $filenames = [DBNameConstants::KLADR, DBNameConstants::STREET, DBNameConstants::SOCRBASE, DBNameConstants::DOMA];
+        foreach ($filenames as $filename) {
+            try {
+                $BASE = new DBase($filename);
+            } catch (ErrorException $e) {
+                return ExitCode::UNSPECIFIED_ERROR;
+            }
+            $BASE->makeCache();
+        }
         return ExitCode::OK;
     }
 }
