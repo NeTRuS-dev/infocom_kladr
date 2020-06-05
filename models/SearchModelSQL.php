@@ -50,12 +50,13 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
                 $this->get_minimum_info = false;
                 if (isset($this->data['selected_street'])) {
                     if (isset($this->data['selected_street'])) {
+                        $string = mb_strtolower($this->data['selected_house']);
                         $result = ($this->getQuery())->from('house')
                             ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_street'], SubjectTypes::STREET), false])
                             ->andWhere(['or',
-                                ['like', 'NAME', mb_strtolower($this->data['selected_house']) . ',%', false],
-                                ['like', 'NAME', '%,' . mb_strtolower($this->data['selected_house']), false],
-                                ['like', 'NAME', '%,' . mb_strtolower($this->data['selected_house']) . ',%', false]])
+                                ['like', 'NAME', $string . ',%', false],
+                                ['like', 'NAME', '%,' . $string, false],
+                                ['like', 'NAME', '%,' . $string . ',%', false]])
                             ->all();
                     } else {
                         $result = [];

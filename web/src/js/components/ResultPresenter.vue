@@ -5,7 +5,7 @@
                 <div class="row-presenter name-chain">
                     <div class="name">Полный путь :</div>
                     <div v-if="content.SOCR!=='ДОМ'" class="value">{{`${content.NAME_CHAIN} -> ${content.SOCR} ${content.NAME}`}}</div>
-                    <div v-else class="value">{{`${content.NAME_CHAIN} -> ${content.SOCR}`}}</div>
+                    <div v-else class="value">{{`${content.NAME_CHAIN} -> ${content.NAME}`}}</div>
                 </div>
             </template>
             <template v-else-if="content.NAME">

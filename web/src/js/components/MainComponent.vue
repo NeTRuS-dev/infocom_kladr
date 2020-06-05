@@ -397,7 +397,7 @@
         height: auto;
 
         form {
-            margin-top: 10%;
+            margin-top: 5%;
             width: 50%;
         }
     }
