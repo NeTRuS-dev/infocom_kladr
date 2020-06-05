@@ -47,7 +47,6 @@ class DBase
             $tmp['id'] = $id;
             $result[] = $tmp;
         }
-        $this->base_connection->checkChunkCachingNeed();
         return $result;
     }
 

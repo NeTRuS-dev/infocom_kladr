@@ -18,7 +18,6 @@ class DBaseEntity
     private int $database_size;
     private array $headers;
 
-    private CacheInterface $cache_storage;
     public string $cache_prefix;
     private array $local_cached_data;
     private string $current_chunk;
@@ -41,7 +40,6 @@ class DBaseEntity
         $this->setUpHeaders();
         $this->database_size = dbase_numrecords($this->resource);
 
-        $this->cache_storage = Yii::$app->cache;
         $this->current_chunk = '';
         $this->local_cached_data = [];
         $this->cache_prefix = $cache_prefix;
@@ -86,16 +84,9 @@ class DBaseEntity
                 return null;
             }
             if ($this->current_chunk !== $range_of_current_number) {
-                $this->checkChunkCachingNeed();
                 $this->current_chunk = $range_of_current_number;
-                $tmp = $this->cache_storage->get("{$this->cache_prefix}.{$range_of_current_number}");
-                if ($tmp === false) {
-                    $this->local_cached_data = [];
-                    $this->chunk_in_cache_is_correct = false;
-                } else {
-                    $this->local_cached_data = $tmp;
-                    $this->chunk_in_cache_is_correct = true;
-                }
+                $this->local_cached_data = [];
+                $this->chunk_in_cache_is_correct = false;
             }
             if (array_key_exists($record_number, $this->local_cached_data)) {
                 return $this->local_cached_data[$record_number];
@@ -108,13 +99,6 @@ class DBaseEntity
         }
     }
 
-    public function checkChunkCachingNeed()
-    {
-        if ($this->chunk_in_cache_is_correct === false) {
-            $this->cache_storage->set("{$this->cache_prefix}.{$this->current_chunk}", $this->local_cached_data);
-            $this->chunk_in_cache_is_correct = true;
-        }
-    }
 
     /**
      * @param string $header_text

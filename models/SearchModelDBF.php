@@ -32,7 +32,6 @@ class SearchModelDBF extends Model implements ISearcher
     public DBase $SOCRBASE;
     public DBase $DOMA_BASE;
 
-    private CacheInterface $cache_storage;
 
     public function __construct()
     {
@@ -41,7 +40,6 @@ class SearchModelDBF extends Model implements ISearcher
         $this->STREET_BASE = new DBase(DBNameConstants::STREET);
         $this->SOCRBASE = new DBase(DBNameConstants::SOCRBASE);
         $this->DOMA_BASE = new DBase(DBNameConstants::DOMA);
-        $this->cache_storage = Yii::$app->cache;
     }
 
     public function rules()
@@ -311,14 +309,7 @@ class SearchModelDBF extends Model implements ISearcher
      */
     private function makeCacheableTypeQuery(DBase $connection, string $cache_search_string, SearchParameter $searchParameter)
     {
-        $tmp_request = $this->cache_storage->get($cache_search_string);
-        if ($tmp_request !== false) {
-            $query_result = $tmp_request;
-        } else {
-            $query_result = $connection->execQuery([$searchParameter]);
-            $this->cache_storage->set($cache_search_string, $query_result);
-        }
-        return $query_result;
+        return $connection->execQuery([$searchParameter]);
     }
 
     /**
