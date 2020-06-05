@@ -70,7 +70,7 @@
                 return ((this.blockName === this.focusedBlock) && this.variantsToChoose !== undefined && this.variantsToChoose.length > 0)
             },
             shouldBeShown() {
-                return (!this.previousDone && this.isOnFocus)
+                return (!this.previousDone && (this.blockName === this.focusedBlock))
             },
             showErrorBorder() {
                 return this.shouldBeShown || (this.isOnFocus === false && this.input_value && !this.selectedValue)

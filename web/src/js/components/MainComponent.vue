@@ -133,21 +133,41 @@
             area(newVal, oldVal) {
                 if (newVal.length < oldVal.length) {
                     this.selected.area = undefined
+                    this.selected.district = undefined
+                    this.selected.city = undefined
+                    this.selected.street = undefined
+                    this.selected.house = undefined
+                    this.district = '';
+                    this.city = '';
+                    this.street = '';
+                    this.house = '';
                 }
             },
             district(newVal, oldVal) {
                 if (newVal.length < oldVal.length) {
                     this.selected.district = undefined
+                    this.selected.city = undefined
+                    this.selected.street = undefined
+                    this.selected.house = undefined
+                    this.city = '';
+                    this.street = '';
+                    this.house = '';
                 }
             },
             city(newVal, oldVal) {
                 if (newVal.length < oldVal.length) {
                     this.selected.city = undefined
+                    this.selected.street = undefined
+                    this.selected.house = undefined
+                    this.street = '';
+                    this.house = '';
                 }
             },
             street(newVal, oldVal) {
                 if (newVal.length < oldVal.length) {
                     this.selected.street = undefined
+                    this.selected.house = undefined
+                    this.house = '';
                 }
             },
         },
