@@ -53,6 +53,6 @@
     }
 
     .carousel-inner {
-        width: 65%;
+        width: 78%;
     }
 </style>

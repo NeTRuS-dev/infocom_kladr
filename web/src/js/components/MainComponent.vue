@@ -1,58 +1,65 @@
 <template>
     <div class="main">
-        <form @submit.prevent v-if="showForm">
+        <form @submit.prevent v-if="showForm" autocomplete="off">
             <form-group-component
-                    @focus-changed="focusedBlock=$event"
+                    @focus-changed="changeFocus"
                     :focused-block="focusedBlock"
-                    :previous-done="prevIsDoneForArea"
+                    :previous-done="!showError"
+                    error-message="Выберите область"
                     v-model="area"
                     @need-to-recalc-variants="selectVariants"
                     :variants-to-choose="variants.area"
                     @elem-selected="onElemSelection"
+                    :selected-value="selected.area"
                     block-name="area"
                     holder="Введите область">Область
             </form-group-component>
             <form-group-component
-                    @focus-changed="focusedBlock=$event"
+                    @focus-changed="changeFocus"
                     :focused-block="focusedBlock"
-                    :previous-done="prevIsDoneForDistrict"
+                    :previous-done="selected.area!==undefined"
+                    error-message="Выберите область"
                     v-model="district"
                     @need-to-recalc-variants="selectVariants"
                     :variants-to-choose="variants.district"
                     @elem-selected="onElemSelection"
+                    :selected-value="selected.district"
                     block-name="district"
                     holder="Введите район">Район
             </form-group-component>
             <form-group-component
-                    @focus-changed="focusedBlock=$event"
+                    @focus-changed="changeFocus"
                     :focused-block="focusedBlock"
-                    :previous-done="prevIsDoneForCity"
+                    :previous-done="selected.area!==undefined"
+                    error-message="Выберите область"
                     v-model="city"
                     @need-to-recalc-variants="selectVariants"
                     :variants-to-choose="variants.city"
                     @elem-selected="onElemSelection"
+                    :selected-value="selected.city"
                     block-name="city"
                     holder="Введите город">Город
             </form-group-component>
             <form-group-component
-                    @focus-changed="focusedBlock=$event"
+                    @focus-changed="changeFocus"
                     :focused-block="focusedBlock"
-                    :previous-done="prevIsDoneForStreet"
+                    :previous-done="selected.district!==undefined||selected.city!==undefined"
+                    error-message="Выберите район или город"
                     v-model="street"
                     @need-to-recalc-variants="selectVariants"
                     :variants-to-choose="variants.street"
                     @elem-selected="onElemSelection"
                     block-name="street"
+                    :selected-value="selected.street"
                     holder="Введите улицу">Улица
             </form-group-component>
             <form-group-component
-                    @focus-changed="focusedBlock=$event"
+                    @focus-changed="changeFocus"
                     :focused-block="focusedBlock"
-                    :previous-done="prevIsDoneForHouse"
+                    :previous-done="selected.street!==undefined"
+                    error-message="Выберите улицу"
                     v-model="house"
-                    @need-to-recalc-variants="selectVariants"
-                    :variants-to-choose="variants.house"
-                    @elem-selected="onElemSelection"
+                    :selected-value="{}"
                     block-name="house"
                     holder="Введите номер дома">Дом
             </form-group-component>
@@ -80,17 +87,14 @@
         name: "MainComponent",
         data() {
             return {
+                showError: false,
+                preventFocusChange: false,
                 focusedBlock: '',
                 area: '',
                 district: '',
                 city: '',
                 street: '',
                 house: '',
-                prevIsDoneForArea: true,
-                prevIsDoneForDistrict: false,
-                prevIsDoneForCity: false,
-                prevIsDoneForStreet: false,
-                prevIsDoneForHouse: false,
                 variants: {
                     area: [],
                     district: [],
@@ -120,11 +124,32 @@
             if (fetchedData.errors) {
                 this.waiting_for_response = false
                 this.presenting_results = false
-
             } else {
                 this.variants.area = this.markAsMatchedAll(fetchedData)
                 this.waiting_for_response = false
             }
+        },
+        watch: {
+            area(newVal, oldVal) {
+                if (newVal.length < oldVal.length) {
+                    this.selected.area = undefined
+                }
+            },
+            district(newVal, oldVal) {
+                if (newVal.length < oldVal.length) {
+                    this.selected.district = undefined
+                }
+            },
+            city(newVal, oldVal) {
+                if (newVal.length < oldVal.length) {
+                    this.selected.city = undefined
+                }
+            },
+            street(newVal, oldVal) {
+                if (newVal.length < oldVal.length) {
+                    this.selected.street = undefined
+                }
+            },
         },
         methods: {
             markAsMatchedAll(data) {
@@ -132,6 +157,14 @@
                     item.matches = true
                     return item
                 })
+            },
+            changeFocus(event) {
+                if (this.preventFocusChange) {
+                    this.preventFocusChange = false
+                    return
+                }
+                this.showError = false
+                this.focusedBlock = event
             },
             async onElemSelection(elem) {
                 this.waiting_for_response = true
@@ -142,85 +175,76 @@
                 let data = {};
                 switch (blockName) {
                     case 'area':
-                        this.prevIsDoneForDistrict = true
                         this.selected.area = value
-                        data = {
-                            data: {
-                                parent_subject: value,
-                                get_districts: true
-                            }
-                        }
-                        fetchedData = (await this.sendRequest(data))
-                        if (fetchedData.errors) {
-                            this.waiting_for_response = false
-                            this.presenting_results = false
-                        } else {
-                            this.variants.district = fetchedData
-                            this.waiting_for_response = false
-                        }
+                        this.selected.district = undefined
+                        this.selected.city = undefined
+                        this.selected.street = undefined
+                        this.selected.house = undefined
+                        this.district = '';
+                        this.city = '';
+                        this.street = '';
+                        this.house = '';
                         break
                     case 'district':
-                        this.prevIsDoneForCity = true
                         this.selected.district = value
-
-                        data = {
-                            data: {
-                                parent_subject: value,
-                                get_cities: true
-                            }
-                        }
-                        fetchedData = (await this.sendRequest(data))
-                        if (fetchedData.errors) {
-                            this.waiting_for_response = false
-                            this.presenting_results = false
-                        } else {
-                            this.variants.city = fetchedData
-                            this.waiting_for_response = false
-                        }
+                        this.selected.city = undefined
+                        this.selected.street = undefined
+                        this.selected.house = undefined
+                        this.city = '';
+                        this.street = '';
+                        this.house = '';
                         break
                     case 'city':
-                        this.prevIsDoneForStreet = true
                         this.selected.city = value
-                        data = {
-                            data: {
-                                parent_subject: value,
-                                get_streets: true
-                            }
-                        }
-                        fetchedData = (await this.sendRequest(data))
-                        if (fetchedData.errors) {
-                            this.waiting_for_response = false
-                            this.presenting_results = false
-                        } else {
-                            this.variants.street = fetchedData
-                            this.waiting_for_response = false
-                        }
+                        this.selected.street = undefined
+                        this.selected.house = undefined
+                        this.street = '';
+                        this.house = '';
                         break
                     case 'street':
-                        this.prevIsDoneForHouse = true
                         this.selected.street = value
-                        data = {
-                            data: {
-                                parent_subject: value,
-                                get_houses: true
-                            }
-                        }
-                        fetchedData = (await this.sendRequest(data))
-                        if (fetchedData.errors) {
-                            this.waiting_for_response = false
-                            this.presenting_results = false
-                        } else {
-                            this.variants.house = fetchedData
-                            this.waiting_for_response = false
-                        }
+                        this.selected.house = undefined
+                        this.house = '';
                         break
-                    case 'house':
-                        this.selected.house = value
-                        this.waiting_for_response = false
-                        break
+                }
+                this.preventFocusChange = true
+                if (!this.selected.area || this.selected.street) {
+                    this.waiting_for_response = false
+                    return
+                }
+                data = {
+                    data: {
+                        selected_area: this.selected.area,
+                    }
+                }
+                if (this.selected.district !== undefined) {
+                    data.data.selected_district = this.selected.district
+                }
+                if (this.selected.city !== undefined) {
+                    data.data.selected_city = this.selected.city
+                }
+                fetchedData = (await this.sendRequest(data))
+                if (fetchedData.errors) {
+                    this.waiting_for_response = false
+                    this.presenting_results = false
+                } else {
+                    this.setNewVariants(fetchedData)
+                    this.waiting_for_response = false
+                }
+            },
+            setNewVariants(newData) {
+                if (newData.district) {
+                    this.variants.district = this.markAsMatchedAll(newData.district)
+                }
+                if (newData.city) {
+                    this.variants.city = this.markAsMatchedAll(newData.city)
+                }
+                if (newData.street) {
+                    this.variants.street = this.markAsMatchedAll(newData.street)
                 }
             },
             async sendRequest(data) {
+                this.preventFocusChange = false
                 let response = await fetch(ajaxUrl, {
                     method: "POST",
                     mode: 'cors',
@@ -237,35 +261,42 @@
                 return (await response.json())
 
             },
-            onSubmitClick() {
+            async onSubmitClick() {
                 if (!this.selected.area) {
+                    this.showError = true
                     return
                 }
+                this.preventFocusChange = false
                 this.waiting_for_response = true
-                this.dataToPresent = this.buildDataToPresent()
+                let data = {
+                    data: {
+                        get_full_response: true,
+                        selected_area: this.selected.area,
+                    }
+                }
+                if (this.selected.district !== undefined) {
+                    data.data.selected_district = this.selected.district
+                }
+                if (this.selected.city !== undefined) {
+                    data.data.selected_city = this.selected.city
+                }
+                if (this.selected.street !== undefined) {
+                    data.data.selected_street = this.selected.street
+                }
+                if (this.house !== undefined && this.house !== '') {
+                    data.data.selected_house = this.house
+                }
+                let fetchedData = (await this.sendRequest(data))
+                if (fetchedData.errors) {
+                    this.presenting_results = false
+                } else {
+                    this.dataToPresent = this.buildDataToPresent(fetchedData)
+                    this.presenting_results = true
+                }
                 this.waiting_for_response = false
-                this.presenting_results = true
             },
-            buildDataToPresent() {
-                let chain = ''
-                let lastSelected = this.selected.area
-                if (this.selected.district) {
-                    chain += `${this.selected.area.SOCR} ${this.selected.area.NAME}`
-                    lastSelected = this.selected.district
-                }
-                if (this.selected.city) {
-                    chain += ` -> ${this.selected.district.SOCR} ${this.selected.district.NAME}`
-                    lastSelected = this.selected.city
-                }
-                if (this.selected.street) {
-                    chain += ` -> ${this.selected.city.SOCR} ${this.selected.city.NAME}`
-                    lastSelected = this.selected.street
-                }
-                if (this.selected.house) {
-                    chain += ` -> ${this.selected.street.SOCR} ${this.selected.street.NAME}`
-                    lastSelected = this.selected.house
-                }
-                return [{NAME_CHAIN: chain, ...lastSelected}]
+            buildDataToPresent(lastLevelData) {
+                return lastLevelData
             },
             newQuery() {
                 this.presenting_results = false
@@ -274,11 +305,6 @@
                 this.city = ''
                 this.street = ''
                 this.house = ''
-                this.prevIsDoneForArea = true
-                this.prevIsDoneForDistrict = false
-                this.prevIsDoneForCity = false
-                this.prevIsDoneForStreet = false
-                this.prevIsDoneForHouse = false
                 this.variants = {
                     area: this.variants.area,
                     district: [],

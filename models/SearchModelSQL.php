@@ -9,6 +9,12 @@ use yii\db\Query;
 class SearchModelSQL extends \yii\base\Model implements ISearcher
 {
     public array $data = [];
+    private bool $get_minimum_info = true;
+    private array $big_cities = [
+        'Москва',
+        'Севастополь',
+        'Санкт-Петербург'
+    ];
 
     public function rules()
     {
@@ -17,24 +23,111 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
         ];
     }
 
+    private function getQuery()
+    {
+        $query = new Query();
+        if ($this->get_minimum_info) {
+            $query->select(['id', 'NAME', 'SOCR', 'CODE']);
+        }
+        return $query;
+    }
+
+    private function getAreas()
+    {
+        return ($this->getQuery())
+            ->from('area')
+            ->where(['!=', 'SOCR', 'г'])
+            ->orWhere(['in', 'NAME', $this->big_cities]);
+    }
+
     public function toDoSearch()
     {
-        if (!isset($this->data['parent_subject'])) {
-            return (new Query())->from('area')->all();
-        } elseif (isset($this->data['get_districts'])) {
-            return (new Query())->from('district')
-                ->where(['like', 'CODE', $this->getCodeSlice($this->data['parent_subject'], SubjectTypes::AREA), false])->all();
-        } elseif (isset($this->data['get_cities'])) {
-            return (new Query())->from('city')
-                ->where(['like', 'CODE', $this->getCodeSlice($this->data['parent_subject'], SubjectTypes::DISTRICT), false])->all();
-        } elseif (isset($this->data['get_streets'])) {
-            return (new Query())->from('street')
-                ->where(['like', 'CODE', $this->getCodeSlice($this->data['parent_subject'], SubjectTypes::CITY), false])->all();
-        } elseif (isset($this->data['get_houses'])) {
-            return (new Query())->from('house')
-                ->where(['like', 'CODE', $this->getCodeSlice($this->data['parent_subject'], SubjectTypes::STREET), false])->all();
+        if (empty($this->data)) {
+            return ($this->getAreas())->all();
+        } else {
+            $result = [];
+            if (isset($this->data['get_full_response'])) {
+                $this->get_minimum_info = false;
+                if (isset($this->data['selected_street'])) {
+                    if (isset($this->data['selected_street'])) {
+                        $result = ($this->getQuery())->from('house')
+                            ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_street'], SubjectTypes::STREET), false])
+                            ->andWhere(['or',
+                                ['like', 'NAME', mb_strtolower($this->data['selected_house']) . ',%', false],
+                                ['like', 'NAME', '%,' . mb_strtolower($this->data['selected_house']), false],
+                                ['like', 'NAME', '%,' . mb_strtolower($this->data['selected_house']) . ',%', false]])
+                            ->all();
+                    } else {
+                        $result = [];
+                    }
+                } elseif (isset($this->data['selected_street'])) {
+                    $result = [($this->getQuery())->from('street')->where(['id' => $this->data['selected_street']['id']])->one()];
+                } elseif (isset($this->data['selected_city'])) {
+                    $result = [($this->getQuery())->from('city')->where(['id' => $this->data['selected_city']['id']])->one()];
+                } elseif (isset($this->data['selected_district'])) {
+                    $result = [($this->getQuery())->from('district')->where(['id' => $this->data['selected_district']['id']])->one()];
+                } elseif (isset($this->data['selected_area'])) {
+                    $result = [($this->getQuery())->from('area')->where(['id' => $this->data['selected_area']['id']])->one()];
+                } else {
+                    $result = [];
+                }
+                $result = $this->buildNameChain($result);
+
+            } else {
+                if (isset($this->data['selected_city'])) {
+                    $result['street'] = ($this->getQuery())->from('street')
+                        ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_city'], SubjectTypes::CITY), false])->all();
+                }
+                if (isset($this->data['selected_district'])) {
+
+                    if (!isset($result['street'])) {
+                        $result['street'] = ($this->getQuery())->from('street')
+                            ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_district'], SubjectTypes::DISTRICT), false])->all();
+                    }
+                    if (!isset($result['city'])) {
+                        $result['city'] = ($this->getQuery())->from('city')
+                            ->where(['!=', 'SOCR', 'тер'])
+                            ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_district'], SubjectTypes::DISTRICT), false])->all();
+                    }
+                }
+                if (isset($this->data['selected_area'])) {
+                    if (!isset($result['city'])) {
+                        $result['city'] = ($this->getQuery())->from('city')
+                            ->where(['!=', 'SOCR', 'тер'])
+                            ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_area'], SubjectTypes::AREA), false])->all();
+                    }
+                    if (!isset($result['district'])) {
+                        $result['district'] = ($this->getQuery())->from('district')
+                            ->where(['!=', 'SOCR', 'п'])
+                            ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_area'], SubjectTypes::AREA), false])->all();
+                    }
+                }
+            }
+            return $result;
         }
-        return [];
+    }
+
+    private function buildNameChain(array $array_with_selected_items): array
+    {
+        $chain = '';
+        if (isset($this->data['selected_area']) && (isset($this->data['selected_district']) || isset($this->data['selected_city']) || isset($this->data['selected_street']) || isset($this->data['selected_house']))) {
+            if (!in_array($this->data['selected_area']['NAME'], $this->big_cities)) {
+                $chain .= "{$this->data['selected_area']['SOCR']} {$this->data['selected_area']['NAME']}";
+            }
+        }
+        if (isset($this->data['selected_district']) && (isset($this->data['selected_city']) || isset($this->data['selected_street']) || isset($this->data['selected_house']))) {
+            $chain .= " -> {$this->data['selected_district']['SOCR']} {$this->data['selected_district']['NAME']}";
+        }
+        if (isset($this->data['selected_city']) && (isset($this->data['selected_street']) || isset($this->data['selected_house']))) {
+            $chain .= " -> {$this->data['selected_city']['SOCR']} {$this->data['selected_city']['NAME']}";
+        }
+        if (isset($this->data['selected_street']) && (isset($this->data['selected_house']))) {
+            $chain .= " -> {$this->data['selected_street']['SOCR']} {$this->data['selected_street']['NAME']}";
+        }
+        foreach ($array_with_selected_items as &$item) {
+            $item['NAME_CHAIN'] = $chain;
+        }
+        return $array_with_selected_items;
     }
 
     /**

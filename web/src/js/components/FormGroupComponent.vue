@@ -1,11 +1,11 @@
 <template>
     <div class="form-group">
-        <span v-if="shouldBeShown" class="text-danger d-block">Заполните предыдущий пункт</span>
+        <span v-if="shouldBeShown" class="text-danger d-block">{{errorMessage}}</span>
         <label :for="blockName">
             <slot></slot>
         </label>
 
-        <input type="text" class="form-control" :class="{error:shouldBeShown}" :id="blockName" :name="blockName"
+        <input type="text" class="form-control" :class="{error:showErrorBorder}" :id="blockName" :name="blockName"
                @click.stop="$emit('focus-changed', blockName)"
                autocomplete="off"
                :value="input_value"
@@ -15,7 +15,7 @@
             <li class="list-group-item"
                 v-for="(variant, index) in matchesVariants" :key="index"
                 @click.prevent="elemSelectionEvent(variant)">
-                {{variant.NAME}}
+                {{variant.SOCR}} {{variant.NAME}}
             </li>
         </ul>
     </div>
@@ -29,12 +29,14 @@
             prop: 'input_value'
         },
         props: {
+            errorMessage: String,
             input_value: String,
             previousDone: Boolean,
             blockName: String,
             holder: String,
             variantsToChoose: Array,
             focusedBlock: String,
+            selectedValue: Object,
         },
         data() {
             return {}
@@ -56,15 +58,22 @@
         },
         computed: {
             matchesVariants() {
-                return this.variantsToChoose.filter((elem) => {
-                    return elem.matches === true
-                })
+                if (this.variantsToChoose) {
+                    return this.variantsToChoose.filter((elem) => {
+                        return elem.matches === true
+                    })
+                } else {
+                    return []
+                }
             },
             isOnFocus() {
-                return ((this.blockName === this.focusedBlock) && this.variantsToChoose)
+                return ((this.blockName === this.focusedBlock) && this.variantsToChoose !== undefined && this.variantsToChoose.length > 0)
             },
             shouldBeShown() {
                 return (!this.previousDone && this.isOnFocus)
+            },
+            showErrorBorder() {
+                return this.shouldBeShown || (this.isOnFocus === false && this.input_value && !this.selectedValue)
             }
         }
     }
@@ -83,8 +92,8 @@
     ul {
         position: absolute;
         list-style: none;
-        max-width: 40rem;
-        height: 20rem;
+        max-width: 40vw;
+        max-height: 40vh;
         overflow: auto;
 
         li {
