@@ -78,24 +78,25 @@ class DBaseEntity
         if ($record_number > $this->database_size) {
             return null;
         } else {
-            try {
-                $range_of_current_number = $this->findNumberRange($record_number);
-            } catch (Exception $e) {
-                return null;
-            }
-            if ($this->current_chunk !== $range_of_current_number) {
-                $this->current_chunk = $range_of_current_number;
-                $this->local_cached_data = [];
-                $this->chunk_in_cache_is_correct = false;
-            }
-            if (array_key_exists($record_number, $this->local_cached_data)) {
-                return $this->local_cached_data[$record_number];
-            } else {
-                $record = array_map('rtrim', mb_convert_encoding(dbase_get_record_with_names($this->resource, $record_number), 'UTF-8', 'CP866'));
-                $this->local_cached_data[$record_number] = $record;
-                $this->chunk_in_cache_is_correct = false;
-                return $record;
-            }
+//            try {
+//                $range_of_current_number = $this->findNumberRange($record_number);
+//            } catch (Exception $e) {
+//                return null;
+//            }
+//            if ($this->current_chunk !== $range_of_current_number) {
+//                $this->current_chunk = $range_of_current_number;
+//                $this->local_cached_data = [];
+//                $this->chunk_in_cache_is_correct = false;
+//            }
+//            if (array_key_exists($record_number, $this->local_cached_data)) {
+//                return $this->local_cached_data[$record_number];
+//            } else {
+//            $record = array_map('rtrim', mb_convert_encoding(dbase_get_record_with_names($this->resource, $record_number), 'UTF-8', 'CP866'));
+//            $this->local_cached_data[$record_number] = $record;
+//            $this->chunk_in_cache_is_correct = false;
+//            return $record;
+            return array_map('rtrim', mb_convert_encoding(dbase_get_record_with_names($this->resource, $record_number), 'UTF-8', 'CP866'));
+//            }
         }
     }
 

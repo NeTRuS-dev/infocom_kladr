@@ -32,8 +32,6 @@ class MakeDbController extends Controller
      */
     public function actionIndex()
     {
-
-
         $model = new SearchModelDBF();
         echo 'working with socrs' . PHP_EOL;
         $size = $model->SOCRBASE->getDatabaseSize();
