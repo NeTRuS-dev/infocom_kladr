@@ -15,6 +15,7 @@ use Yii;
 use yii\base\ErrorException;
 use yii\console\Controller;
 use yii\console\ExitCode;
+use yii\db\Query;
 
 /**
  * This command echoes the first argument that you have entered.
@@ -34,16 +35,25 @@ class MakeDbController extends Controller
     {
         $model = new SearchModelDBF();
         echo 'working with socrs' . PHP_EOL;
+        $cur_count = intval((new Query())->from('socrbase')->count());
+        $cur_id = intval((new Query())->from('socrbase')->max('id'));
         $size = $model->SOCRBASE->getDatabaseSize();
-        for ($i = 1; $i <= $size; ++$i) {
-            $item = $model->SOCRBASE->getItemById($i);
-            Yii::$app->db->createCommand()->insert('socrbase', [
-                'LEVEL' => $item['LEVEL'],
-                'SCNAME' => $item['SCNAME'],
-                'SOCRNAME' => $item['SOCRNAME'],
-                'KOD_T_ST' => $item['KOD_T_ST'],
-            ])->execute();
+        $start = 1;
+        if ($cur_count != 0) {
+            $start = intval($cur_id) + 1;
         }
+        if ($cur_count == 0 || $cur_id < $size) {
+            for ($i = $start; $i <= $size; ++$i) {
+                $item = $model->SOCRBASE->getItemById($i);
+                Yii::$app->db->createCommand()->insert('socrbase', [
+                    'LEVEL' => $item['LEVEL'],
+                    'SCNAME' => $item['SCNAME'],
+                    'SOCRNAME' => $item['SOCRNAME'],
+                    'KOD_T_ST' => $item['KOD_T_ST'],
+                ])->execute();
+            }
+        }
+
         echo 'working with areas' . PHP_EOL;
         $this->makeDb($model, $model->KLADR_BASE, SubjectTypes::AREA, 'area');
         echo 'working with districts' . PHP_EOL;
@@ -60,10 +70,25 @@ class MakeDbController extends Controller
 
     private function makeDb($model, $connection, $type, $db_name, $check_enabled = true)
     {
+        $start = 1;
         $size = $connection->getDatabaseSize();
+        $cur_count = intval((new Query())->from($db_name)->count());
+
+        if ($check_enabled === false) {
+            $cur_id = intval((new Query())->from($db_name)->max('id'));
+            if ($cur_count != 0) {
+                $start = $cur_id + 1;
+            }
+            if (!($cur_count == 0 || $cur_id < $size)) {
+                return;
+            }
+        } elseif ($cur_count != 0) {
+            return;
+        }
+
         $matches = $model->getEntitiesWithPassedType($type);
 
-        for ($i = 1; $i <= $size; ++$i) {
+        for ($i = $start; $i <= $size; ++$i) {
             if ($check_enabled && !in_array($i, $matches)) {
                 continue;
             }
