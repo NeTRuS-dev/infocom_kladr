@@ -16,7 +16,7 @@ use Yii;
 use yii\base\Model;
 use yii\caching\CacheInterface;
 
-class SearchModel extends Model
+class SearchModelDBF extends Model implements ISearcher
 {
     public string $area = '';
     public string $district = '';
@@ -407,7 +407,7 @@ class SearchModel extends Model
      * @param int $type
      * @return string
      */
-    private function getCodeSlice($row, $type)
+    public function getCodeSlice($row, $type)
     {
         $header_name = 'CODE';
         $slice_length = 0;
