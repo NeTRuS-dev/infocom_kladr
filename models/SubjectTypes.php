@@ -12,4 +12,5 @@ class SubjectTypes
     const CITY = 4;
     const STREET = 5;
     const HOUSE = 6;
+    const DUMMY = 228;
 }

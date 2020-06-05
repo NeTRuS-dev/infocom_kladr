@@ -51,9 +51,9 @@ class MakeDbController extends Controller
         echo 'working with cities' . PHP_EOL;
         $this->makeDb($model, $model->KLADR_BASE, SubjectTypes::CITY, 'city');
         echo 'working with streets' . PHP_EOL;
-        $this->makeDb($model, $model->STREET_BASE, SubjectTypes::CITY, 'street', false);
+        $this->makeDb($model, $model->STREET_BASE, SubjectTypes::DUMMY, 'street', false);
         echo 'working with houses' . PHP_EOL;
-        $this->makeDb($model, $model->DOMA_BASE, SubjectTypes::CITY, 'house', false);
+        $this->makeDb($model, $model->DOMA_BASE, SubjectTypes::DUMMY, 'house', false);
 
         return ExitCode::OK;
     }
