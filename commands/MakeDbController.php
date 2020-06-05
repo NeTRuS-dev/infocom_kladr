@@ -9,6 +9,8 @@ namespace app\commands;
 
 use app\models\DBase;
 use app\models\DBNameConstants;
+use app\models\SearchModelDBF;
+use app\models\SubjectTypes;
 use Yii;
 use yii\base\ErrorException;
 use yii\console\Controller;
@@ -30,16 +32,53 @@ class MakeDbController extends Controller
      */
     public function actionIndex()
     {
-        $filenames = [DBNameConstants::KLADR, DBNameConstants::STREET, DBNameConstants::SOCRBASE, DBNameConstants::DOMA];
-        foreach ($filenames as $filename) {
-            try {
-                $BASE = new DBase($filename);
-            } catch (ErrorException $e) {
-                return ExitCode::UNSPECIFIED_ERROR;
-            }
-            echo 'processing ' . $filename . PHP_EOL;
-            $BASE->makeCache();
+
+
+        $model = new SearchModelDBF();
+        echo 'working with socrs' . PHP_EOL;
+        $size = $model->SOCRBASE->getDatabaseSize();
+        for ($i = 1; $i <= $size; ++$i) {
+            $item = $model->SOCRBASE->getItemById($i);
+            Yii::$app->db->createCommand()->insert('socrbase', [
+                'LEVEL' => $item['LEVEL'],
+                'SCNAME' => $item['SCNAME'],
+                'SOCRNAME' => $item['SOCRNAME'],
+                'KOD_T_ST' => $item['KOD_T_ST'],
+            ])->execute();
         }
+        echo 'working with areas' . PHP_EOL;
+        $this->makeDb($model, $model->KLADR_BASE, SubjectTypes::AREA, 'area');
+        echo 'working with districts' . PHP_EOL;
+        $this->makeDb($model, $model->KLADR_BASE, SubjectTypes::DISTRICT, 'district');
+        echo 'working with cities' . PHP_EOL;
+        $this->makeDb($model, $model->KLADR_BASE, SubjectTypes::CITY, 'city');
+        echo 'working with streets' . PHP_EOL;
+        $this->makeDb($model, $model->STREET_BASE, SubjectTypes::CITY, 'street', false);
+        echo 'working with houses' . PHP_EOL;
+        $this->makeDb($model, $model->DOMA_BASE, SubjectTypes::CITY, 'house', false);
+
         return ExitCode::OK;
+    }
+
+    private function makeDb($model, $connection, $type, $db_name, $check_enabled = true)
+    {
+        $size = $connection->getDatabaseSize();
+        $matches = $model->getEntitiesWithPassedType($type);
+
+        for ($i = 1; $i <= $size; ++$i) {
+            if ($check_enabled && !in_array($i, $matches)) {
+                continue;
+            }
+            $item = $connection->getItemById($i);
+            Yii::$app->db->createCommand()->insert($db_name, [
+                'NAME' => $item['NAME'],
+                'SOCR' => $item['SOCR'],
+                'CODE' => $item['CODE'],
+                'INDEX' => $item['INDEX'],
+                'GNINMB' => $item['GNINMB'],
+                'UNO' => $item['UNO'],
+                'OCATD' => $item['OCATD'],
+            ])->execute();
+        }
     }
 }

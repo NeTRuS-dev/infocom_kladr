@@ -112,6 +112,9 @@
         },
         async created() {
             this.waiting_for_response = true
+            document.addEventListener('click', () => {
+                this.focusedBlock = ''
+            })
             let data = {data: {}}
             let fetchedData = (await this.sendRequest(data))
             if (fetchedData.errors) {

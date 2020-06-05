@@ -5,6 +5,7 @@ namespace app\controllers;
 
 
 use app\models\SearchModelDBF;
+use app\models\SearchModelSQL;
 use Yii;
 use yii\filters\Cors;
 use yii\web\Controller;
@@ -30,7 +31,7 @@ class AjaxController extends Controller
     {
         set_time_limit(0);
 
-        $query = new SearchModelDBF();
+        $query = new SearchModelSQL();
         $query->load(Yii::$app->request->post(), '');
         if ($query->validate()) {
             return $this->asJson($query->toDoSearch());

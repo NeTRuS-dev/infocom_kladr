@@ -55,7 +55,7 @@ class DBase
      * @param int $id
      * @return array|null
      */
-    private function getItemById($id)
+    public function getItemById($id)
     {
         return $this->base_connection->getRecord($id);
     }
@@ -89,6 +89,12 @@ class DBase
     private function makeFullPath($filename)
     {
         return Yii::getAlias('@database') . DIRECTORY_SEPARATOR . $filename;
+    }
+
+    public function getDatabaseSize()
+    {
+        return $this->base_connection->getDatabaseSize();
+
     }
 
     /**

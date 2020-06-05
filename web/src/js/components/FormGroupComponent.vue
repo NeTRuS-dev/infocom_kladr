@@ -6,11 +6,12 @@
         </label>
 
         <input type="text" class="form-control" :class="{error:shouldBeShown}" :id="blockName" :name="blockName"
+               @click.stop="$emit('focus-changed', blockName)"
                autocomplete="off"
                :value="input_value"
                @input="onInput($event)"
                :placeholder="holder">
-        <ul class="list-group" v-show="isOnFocus">
+        <ul @click.stop="$emit('focus-changed', blockName)" class="list-group" v-show="isOnFocus">
             <li class="list-group-item"
                 v-for="(variant, index) in matchesVariants" :key="index"
                 @click.prevent="elemSelectionEvent(variant)">

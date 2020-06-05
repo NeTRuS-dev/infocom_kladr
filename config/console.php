@@ -15,14 +15,14 @@ $config = [
         '@database' => '@app/kladr_db_folder',
     ],
     'components' => [
-        //TODO it's important to set max redis memory to 2048mb
         'cache' => [
-            'class' => 'yii\redis\Cache',
-            'redis' => [
-                'hostname' => 'localhost',
-                'port' => 6379,
-                'database' => 0,
-            ]
+            'class' => 'yii\caching\DummyCache',
+//            'class' => 'yii\redis\Cache',
+//            'redis' => [
+//                'hostname' => 'localhost',
+//                'port' => 6379,
+//                'database' => 0,
+//            ]
         ],
         'log' => [
             'targets' => [

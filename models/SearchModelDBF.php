@@ -27,10 +27,10 @@ class SearchModelDBF extends Model implements ISearcher
 
     private bool $is_validated = false;
 
-    private DBase $KLADR_BASE;
-    private DBase $STREET_BASE;
-    private DBase $SOCRBASE;
-    private DBase $DOMA_BASE;
+    public DBase $KLADR_BASE;
+    public DBase $STREET_BASE;
+    public DBase $SOCRBASE;
+    public DBase $DOMA_BASE;
 
     private CacheInterface $cache_storage;
 
@@ -239,7 +239,7 @@ class SearchModelDBF extends Model implements ISearcher
      * @param int $level
      * @return int[]
      */
-    private function getEntitiesWithPassedType(int $level)
+    public function getEntitiesWithPassedType(int $level)
     {
         $query_result = [];
         switch ($level) {
@@ -293,7 +293,7 @@ class SearchModelDBF extends Model implements ISearcher
      * @param int $type
      * @return array
      */
-    private function getTypes($type)
+    public function getTypes($type)
     {
         $result = $this->makeCacheableTypeQuery(
             $this->SOCRBASE,
