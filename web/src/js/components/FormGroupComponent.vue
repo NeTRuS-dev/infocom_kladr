@@ -5,7 +5,9 @@
             <slot></slot>
         </label>
 
-        <input type="text" class="form-control" :class="{error:showErrorBorder}" :id="blockName" :name="blockName"
+        <input type="text" class="form-control" :class="{error:showErrorBorder,success:selectedValue&&variantsToChoose}"
+               :id="blockName"
+               :name="blockName"
                @click.stop="$emit('focus-changed', blockName)"
                autocomplete="off"
                :value="input_value"
@@ -48,7 +50,6 @@
                 this.$emit('focus-changed', this.blockName)
             },
             elemSelectionEvent(value) {
-                this.$emit('data-changed', value.NAME)
                 this.$emit('elem-selected', {
                     blockName: this.blockName,
                     value: value
@@ -67,6 +68,9 @@
                 }
             },
             isOnFocus() {
+                if (this.blockName === this.focusedBlock) {
+                    document.querySelector('input#' + this.blockName).focus()
+                }
                 return ((this.blockName === this.focusedBlock) && this.variantsToChoose !== undefined && this.variantsToChoose.length > 0)
             },
             shouldBeShown() {
@@ -82,6 +86,11 @@
 <style lang="scss" scoped>
     .error {
         border-color: red;
+    }
+
+    .success {
+        border-color: rgb(51, 106, 64);;
+
     }
 
     .form-group {

@@ -43,7 +43,7 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
     public function toDoSearch()
     {
         if (empty($this->data)) {
-            return ($this->getAreas())->all();
+            return $this->addMatchProp(($this->getAreas())->all());
         } else {
             $result = [];
             if (isset($this->data['get_full_response'])) {
@@ -58,17 +58,25 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
                                 ['like', 'NAME', '%,' . $string, false],
                                 ['like', 'NAME', '%,' . $string . ',%', false]])
                             ->all();
+                        $result = $this->addFullSocr(array_map(function ($item) use ($string) {
+                            $item['NAME'] = $string;
+                            return $item;
+                        }, $result), SubjectTypes::HOUSE);
                     } else {
                         $result = [];
                     }
                 } elseif (isset($this->data['selected_street'])) {
                     $result = [($this->getQuery())->from('street')->where(['id' => $this->data['selected_street']['id']])->one()];
+                    $result = $this->addFullSocr($result, SubjectTypes::STREET);
                 } elseif (isset($this->data['selected_city'])) {
                     $result = [($this->getQuery())->from('city')->where(['id' => $this->data['selected_city']['id']])->one()];
+                    $result = $this->addFullSocr($result, SubjectTypes::CITY);
                 } elseif (isset($this->data['selected_district'])) {
                     $result = [($this->getQuery())->from('district')->where(['id' => $this->data['selected_district']['id']])->one()];
+                    $result = $this->addFullSocr($result, SubjectTypes::DISTRICT);
                 } elseif (isset($this->data['selected_area'])) {
                     $result = [($this->getQuery())->from('area')->where(['id' => $this->data['selected_area']['id']])->one()];
+                    $result = $this->addFullSocr($result, SubjectTypes::AREA);
                 } else {
                     $result = [];
                 }
@@ -76,36 +84,60 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
 
             } else {
                 if (isset($this->data['selected_city'])) {
-                    $result['street'] = ($this->getQuery())->from('street')
-                        ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_city'], SubjectTypes::CITY), false])->all();
+                    $result['street'] = $this->addMatchProp(($this->getQuery())->from('street')
+                        ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_city'], SubjectTypes::CITY), false])->all());
                 }
                 if (isset($this->data['selected_district'])) {
 
                     if (!isset($result['street'])) {
-                        $result['street'] = ($this->getQuery())->from('street')
-                            ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_district'], SubjectTypes::DISTRICT), false])->all();
+                        $result['street'] = $this->addMatchProp(($this->getQuery())->from('street')
+                            ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_district'], SubjectTypes::DISTRICT), false])->all());
                     }
                     if (!isset($result['city'])) {
-                        $result['city'] = ($this->getQuery())->from('city')
+                        $result['city'] = $this->addMatchProp(($this->getQuery())->from('city')
                             ->where(['!=', 'SOCR', 'тер'])
-                            ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_district'], SubjectTypes::DISTRICT), false])->all();
+                            ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_district'], SubjectTypes::DISTRICT), false])->all());
                     }
                 }
                 if (isset($this->data['selected_area'])) {
                     if (!isset($result['city'])) {
-                        $result['city'] = ($this->getQuery())->from('city')
+                        $result['city'] = $this->addMatchProp(($this->getQuery())->from('city')
                             ->where(['!=', 'SOCR', 'тер'])
-                            ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_area'], SubjectTypes::AREA), false])->all();
+                            ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_area'], SubjectTypes::AREA), false])->all());
                     }
                     if (!isset($result['district'])) {
-                        $result['district'] = ($this->getQuery())->from('district')
-                            ->where(['!=', 'SOCR', 'п'])
-                            ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_area'], SubjectTypes::AREA), false])->all();
+                        $result['district'] = $this->addMatchProp(($this->getQuery())->from('district')
+                            ->where(['not in', 'SOCR', ['тер', 'п']])
+                            ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_area'], SubjectTypes::AREA), false])->all());
                     }
                 }
             }
             return $result;
         }
+    }
+
+    private function addMatchProp(array $items): array
+    {
+        foreach ($items as &$item) {
+            $item['matches'] = true;
+        }
+        return $items;
+    }
+
+    private function addFullSocr(array $items, int $level): array
+    {
+        $level_condition = ['=', 'LEVEL', $level];
+        if ($level == SubjectTypes::SMALL_TER || $level == SubjectTypes::CITY) {
+            $level_condition = ['or', ['=', 'LEVEL', SubjectTypes::SMALL_TER], ['=', 'LEVEL', SubjectTypes::CITY]];
+        }
+        foreach ($items as &$item) {
+            $socrs = (new Query())->select('SOCRNAME')->from('socrbase')
+                ->where($level_condition)
+                ->andWhere(['SCNAME' => $item['SOCR']])->all();
+            $socr = $socrs[array_rand($socrs)];
+            $item['FULL_SOCR'] = $socr['SOCRNAME'];
+        }
+        return $items;
     }
 
     private function buildNameChain(array $array_with_selected_items): array
@@ -146,13 +178,13 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
                 break;
             case SubjectTypes::CITY:
             case SubjectTypes::SMALL_TER:
-                $slice_length = 8;
-                break;
-            case SubjectTypes::STREET:
                 $slice_length = 11;
                 break;
-            case SubjectTypes::HOUSE:
+            case SubjectTypes::STREET:
                 $slice_length = 15;
+                break;
+            case SubjectTypes::HOUSE:
+                $slice_length = 19;
                 break;
         }
         return mb_convert_encoding(mb_substr($row['CODE'], 0, $slice_length) . '%', 'UTF-8');

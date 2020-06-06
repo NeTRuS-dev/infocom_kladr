@@ -4,7 +4,9 @@
             <template v-if="withChain">
                 <div class="row-presenter name-chain">
                     <div class="name">Полный путь :</div>
-                    <div v-if="content.SOCR!=='ДОМ'" class="value">{{`${content.NAME_CHAIN} -> ${content.SOCR} ${content.NAME}`}}</div>
+                    <div v-if="content.SOCR!=='ДОМ'" class="value">{{`${content.NAME_CHAIN} -> ${content.SOCR}
+                        ${content.NAME}`}}
+                    </div>
                     <div v-else class="value">{{`${content.NAME_CHAIN} -> ${content.NAME}`}}</div>
                 </div>
             </template>
@@ -18,6 +20,12 @@
                 <div class="row-presenter socr">
                     <div class="name">Сокращение :</div>
                     <div class="value">{{content.SOCR}}</div>
+                </div>
+            </template>
+            <template v-if="content.FULL_SOCR">
+                <div class="row-presenter full_socr">
+                    <div class="name">Расшифровка сокращения :</div>
+                    <div class="value">{{content.FULL_SOCR}}</div>
                 </div>
             </template>
             <template v-if="content.CODE">
@@ -76,6 +84,10 @@
         display: flex;
         flex-direction: column;
         justify-content: space-around;
+    }
+
+    .name-chain {
+        font-size: 1rem;
     }
 
     .row-presenter {

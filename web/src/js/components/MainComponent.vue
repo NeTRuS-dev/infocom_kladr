@@ -25,7 +25,7 @@
                     @elem-selected="onElemSelection"
                     :selected-value="selected.district"
                     block-name="district"
-                    holder="Введите район">Район
+                    holder="Введите район">Регион / район
             </form-group-component>
             <form-group-component
                     @focus-changed="changeFocus"
@@ -38,7 +38,7 @@
                     @elem-selected="onElemSelection"
                     :selected-value="selected.city"
                     block-name="city"
-                    holder="Введите город">Город
+                    holder="Введите город">Город / н. п.
             </form-group-component>
             <form-group-component
                     @focus-changed="changeFocus"
@@ -63,9 +63,10 @@
                     block-name="house"
                     holder="Введите номер дома">Дом
             </form-group-component>
-            <div class="w-100 d-flex justify-content-center">
-                <input type="submit" value="Вывести данные по выбранным субъектам" class="btn btn-primary"
-                       @click.prevent="onSubmitClick">
+            <div class="w-100 d-flex justify-content-center mt-4">
+                <input type="submit" value="Вывести данные по выбранным субъектам" class="btn btn-primary mr-5"
+                       @click.prevent.stop="onSubmitClick">
+                <button class="btn btn-info ml-5" @click="newQuery">Сбросить форму</button>
             </div>
         </form>
         <loading-spinner v-if="waiting_for_response"></loading-spinner>
@@ -114,19 +115,16 @@
                 dataToPresent: [],
             }
         },
-        async created() {
-            this.waiting_for_response = true
+        async mounted() {
             document.addEventListener('click', () => {
                 this.focusedBlock = ''
             })
             let data = {data: {}}
             let fetchedData = (await this.sendRequest(data))
             if (fetchedData.errors) {
-                this.waiting_for_response = false
                 this.presenting_results = false
             } else {
-                this.variants.area = this.markAsMatchedAll(fetchedData)
-                this.waiting_for_response = false
+                this.variants.area = fetchedData
             }
         },
         watch: {
@@ -172,27 +170,19 @@
             },
         },
         methods: {
-            markAsMatchedAll(data) {
-                return data.map((item) => {
-                    item.matches = true
-                    return item
-                })
-            },
             changeFocus(event) {
                 if (this.preventFocusChange) {
                     this.preventFocusChange = false
+                    this.focusedBlock = ''
                     return
                 }
                 this.showError = false
                 this.focusedBlock = event
             },
             async onElemSelection(elem) {
-                this.waiting_for_response = true
-                this.focusedBlock = '';
-                let fetchedData = {};
-                let blockName = elem.blockName
-                let value = elem.value
-                let data = {};
+                this.preventFocusChange = true
+                this.focusedBlock = ''
+                let {blockName, value} = elem
                 switch (blockName) {
                     case 'area':
                         this.selected.area = value
@@ -200,38 +190,51 @@
                         this.selected.city = undefined
                         this.selected.street = undefined
                         this.selected.house = undefined
+                        this.area = value.NAME;
                         this.district = '';
                         this.city = '';
                         this.street = '';
                         this.house = '';
+                        this.variants.district = []
+                        this.variants.city = []
+                        this.variants.street = []
                         break
                     case 'district':
                         this.selected.district = value
                         this.selected.city = undefined
                         this.selected.street = undefined
                         this.selected.house = undefined
+                        this.district = value.NAME;
                         this.city = '';
                         this.street = '';
                         this.house = '';
+                        this.variants.city = []
+                        this.variants.street = []
                         break
                     case 'city':
                         this.selected.city = value
                         this.selected.street = undefined
                         this.selected.house = undefined
+                        this.city = value.NAME;
                         this.street = '';
                         this.house = '';
+                        this.variants.street = []
                         break
                     case 'street':
+                        this.street = value.NAME;
                         this.selected.street = value
                         this.selected.house = undefined
                         this.house = '';
                         break
                 }
-                this.preventFocusChange = true
                 if (!this.selected.area || this.selected.street) {
-                    this.waiting_for_response = false
                     return
                 }
+                await this.getNewVarians()
+
+            },
+            async getNewVarians() {
+                let fetchedData, data
                 data = {
                     data: {
                         selected_area: this.selected.area,
@@ -245,26 +248,38 @@
                 }
                 fetchedData = (await this.sendRequest(data))
                 if (fetchedData.errors) {
-                    this.waiting_for_response = false
                     this.presenting_results = false
                 } else {
                     this.setNewVariants(fetchedData)
-                    this.waiting_for_response = false
                 }
             },
             setNewVariants(newData) {
                 if (newData.district) {
-                    this.variants.district = this.markAsMatchedAll(newData.district)
+                    if (this.district !== '') {
+                        this.variants.district = newData.district
+                        this.selectVariants('district')
+                    } else {
+                        this.variants.district = newData.district
+                    }
                 }
                 if (newData.city) {
-                    this.variants.city = this.markAsMatchedAll(newData.city)
+                    if (this.city !== '') {
+                        this.variants.city = newData.city
+                        this.selectVariants('city')
+                    } else {
+                        this.variants.city = newData.city
+                    }
                 }
                 if (newData.street) {
-                    this.variants.street = this.markAsMatchedAll(newData.street)
+                    if (this.street !== '') {
+                        this.variants.street = newData.street
+                        this.selectVariants('street')
+                    } else {
+                        this.variants.street = newData.street
+                    }
                 }
             },
             async sendRequest(data) {
-                this.preventFocusChange = false
                 let response = await fetch(ajaxUrl, {
                     method: "POST",
                     mode: 'cors',
@@ -275,14 +290,13 @@
                 });
                 if (!response.ok) {
                     console.log('На сервере произошла ошибка ' + response.status)
-                    this.waiting_for_response = false
-                    this.presenting_results = false
                 }
                 return (await response.json())
 
             },
             async onSubmitClick() {
                 if (!this.selected.area) {
+                    this.focusedBlock = 'area'
                     this.showError = true
                     return
                 }
@@ -319,6 +333,7 @@
                 return lastLevelData
             },
             newQuery() {
+                this.preventFocusChange = false
                 this.presenting_results = false
                 this.area = ''
                 this.district = ''
@@ -397,7 +412,6 @@
         height: auto;
 
         form {
-            margin-top: 5%;
             width: 50%;
         }
     }
