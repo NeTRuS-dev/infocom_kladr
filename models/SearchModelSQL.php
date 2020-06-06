@@ -149,13 +149,13 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
             }
         }
         if (isset($this->data['selected_district']) && (isset($this->data['selected_city']) || isset($this->data['selected_street']) || isset($this->data['selected_house']))) {
-            $chain .= " -> {$this->data['selected_district']['SOCR']} {$this->data['selected_district']['NAME']}";
+            $chain .= ($chain ? " -> " : '') . "{$this->data['selected_district']['SOCR']} {$this->data['selected_district']['NAME']}";
         }
         if (isset($this->data['selected_city']) && (isset($this->data['selected_street']) || isset($this->data['selected_house']))) {
-            $chain .= " -> {$this->data['selected_city']['SOCR']} {$this->data['selected_city']['NAME']}";
+            $chain .= ($chain ? " -> " : '') . "{$this->data['selected_city']['SOCR']} {$this->data['selected_city']['NAME']}";
         }
         if (isset($this->data['selected_street']) && (isset($this->data['selected_house']))) {
-            $chain .= " -> {$this->data['selected_street']['SOCR']} {$this->data['selected_street']['NAME']}";
+            $chain .= ($chain ? " -> " : '') . "{$this->data['selected_street']['SOCR']} {$this->data['selected_street']['NAME']}";
         }
         foreach ($array_with_selected_items as &$item) {
             $item['NAME_CHAIN'] = $chain;
