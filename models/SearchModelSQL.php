@@ -48,7 +48,7 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
             $result = [];
             if (isset($this->data['get_full_response'])) {
                 $this->get_minimum_info = false;
-                if (isset($this->data['selected_street'])) {
+                if (isset($this->data['selected_house'])) {
                     if (isset($this->data['selected_street'])) {
                         $string = mb_strtolower($this->data['selected_house']);
                         $result = ($this->getQuery())->from('house')
