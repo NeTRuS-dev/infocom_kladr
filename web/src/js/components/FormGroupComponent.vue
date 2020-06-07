@@ -77,7 +77,7 @@
                 return (!this.previousDone && (this.blockName === this.focusedBlock))
             },
             showErrorBorder() {
-                return this.shouldBeShown || (this.isOnFocus === false && this.input_value && !this.selectedValue)
+                return (this.shouldBeShown) || (this.isOnFocus === false && this.input_value && !this.selectedValue && this.variantsToChoose !== undefined && this.variantsToChoose.length > 0)
             }
         }
     }

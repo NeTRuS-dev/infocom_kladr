@@ -2,7 +2,11 @@
 
 namespace app\controllers;
 
+use Yii;
+use yii\base\ErrorException;
+use yii\db\Query;
 use yii\web\Controller;
+use yii\web\HttpException;
 
 class SiteController extends Controller
 {
@@ -25,6 +29,9 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
+        if ((new Query())->from('migration')->count() < 11) {
+            throw new HttpException(404, 'Примените миграции!!!');
+        }
         return $this->render('index');
     }
 
