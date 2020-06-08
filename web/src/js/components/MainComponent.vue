@@ -56,8 +56,8 @@
             <form-group-component
                     @focus-changed="changeFocus"
                     :focused-block="focusedBlock"
-                    :previous-done="(selected.street!==undefined||selected.city!==undefined)&&houseFound"
-                    :error-message="(selected.street!==undefined||selected.city!==undefined)?'Дом не найден':'Выберите улицу или город'"
+                    :previous-done="(selected.street!==undefined||(selected.city!==undefined&&this.selected.city.SOCR !== 'г'))&&houseFound"
+                    :error-message="(selected.street!==undefined||(selected.city!==undefined&&this.selected.city.SOCR !== 'г'))?'Дом не найден':'Выберите улицу или населённый пункт'"
                     v-model="house"
                     :selected-value="{}"
                     block-name="house"
@@ -341,7 +341,6 @@
                 this.waiting_for_response = true
                 let data = {
                     data: {
-                        get_full_response: true,
                         selected_area: this.selected.area,
                     }
                 }
@@ -354,8 +353,10 @@
                 if (this.selected.street !== undefined) {
                     data.data.selected_street = this.selected.street
                 }
-                if (this.house !== undefined && this.house !== '') {
-                    data.data.selected_house = this.house
+                if (this.selected.street !== undefined || this.selected.city.SOCR !== 'г') {
+                    if (this.house !== undefined && this.house !== '') {
+                        data.data.selected_house = this.house
+                    }
                 }
                 let fetchedData = (await this.sendRequest(data, fullRequestUrl))
                 if (fetchedData.errors) {

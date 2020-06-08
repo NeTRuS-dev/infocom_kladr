@@ -53,7 +53,7 @@
     }
 
     .carousel-inner {
-        width: 50%;
+        width: 60%;
         font-size: 1.2rem;
     }
 </style>
