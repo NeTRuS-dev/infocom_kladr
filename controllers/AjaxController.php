@@ -29,8 +29,6 @@ class AjaxController extends Controller
 
     public function actionProcessSearchRequest()
     {
-        set_time_limit(0);
-
         $query = new SearchModelSQL();
         $query->load(Yii::$app->request->post(), '');
         if ($query->validate()) {
@@ -38,5 +36,29 @@ class AjaxController extends Controller
         } else {
             return $this->asJson(['errors' => $query->getFirstErrors()]);
         }
+    }
+
+    public function actionGetFullResponse()
+    {
+        $query = new SearchModelSQL();
+        $query->load(Yii::$app->request->post(), '');
+        if ($query->validate()) {
+            return $this->asJson($query->getFullResponse());
+        } else {
+            return $this->asJson(['errors' => $query->getFirstErrors()]);
+        }
+    }
+
+    public function actionCheckHouseExistence()
+    {
+        $query = new SearchModelSQL();
+        $query->load(Yii::$app->request->post(), '');
+        return $this->asJson($query->getCheckHouseExistence());
+    }
+
+    public function actionGetInitData()
+    {
+        $query = new SearchModelSQL();
+        return $this->asJson($query->getInitData());
     }
 }

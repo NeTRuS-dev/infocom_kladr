@@ -49,7 +49,10 @@ $config = [
             'enableStrictParsing' => true,
             'rules' => [
                 'GET /' => 'site/index',
+                'POST ajax/init' => 'ajax/get-init-data',
                 'POST ajax/search' => 'ajax/process-search-request',
+                'POST ajax/full' => 'ajax/get-full-response',
+                'POST ajax/check-house' => 'ajax/check-house-existence',
             ],
         ],
     ],

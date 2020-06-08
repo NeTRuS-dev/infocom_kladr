@@ -74,6 +74,9 @@
                 return ((this.blockName === this.focusedBlock) && this.variantsToChoose !== undefined && this.variantsToChoose.length > 0)
             },
             shouldBeShown() {
+                if (this.blockName === 'house' && this.errorMessage === 'Дом не найден') {
+                    return (!this.previousDone)
+                }
                 return (!this.previousDone && (this.blockName === this.focusedBlock))
             },
             showErrorBorder() {

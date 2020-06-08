@@ -40,80 +40,106 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
             ->orWhere(['in', 'NAME', $this->big_cities]);
     }
 
-    public function toDoSearch()
+    public function getInitData()
     {
-        if (empty($this->data)) {
-            return $this->addMatchProp(($this->getAreas())->all());
+        return [
+            'area' => $this->addMatchProp(($this->getAreas())->all()),
+            'city' => $this->addMatchProp(($this->getQuery())->from('city')->where(['and', ['SOCR' => 'г'], ['in', 'NAME', $this->big_cities]])->all()),
+        ];
+    }
+
+    public function getFullResponse()
+    {
+        $result = [];
+        $this->get_minimum_info = false;
+        if (isset($this->data['selected_house'])) {
+            if (isset($this->data['selected_street'])||isset($this->data['selected_city'])) {
+                $string = mb_strtolower($this->data['selected_house']);
+                $slice = isset($this->data['selected_street']) ? $this->getCodeSlice($this->data['selected_street'], SubjectTypes::STREET) : $this->getCodeSlice($this->data['selected_city'], SubjectTypes::CITY);
+                $result = ($this->getQuery())->from('house')
+                    ->where(['like', 'CODE', $slice, false])
+                    ->andWhere(['or',
+                        ['like', 'NAME', $string . ',%', false],
+                        ['like', 'NAME', '%,' . $string, false],
+                        ['like', 'NAME', '%,' . $string . ',%', false]])
+                    ->all();
+                $result = $this->addFullSocr(array_map(function ($item) use ($string) {
+                    $item['NAME'] = $string;
+                    return $item;
+                }, $result), SubjectTypes::HOUSE);
+            } else {
+                $result = [];
+            }
+        } elseif (isset($this->data['selected_street'])) {
+            $result = [($this->getQuery())->from('street')->where(['id' => $this->data['selected_street']['id']])->one()];
+            $result = $this->addFullSocr($result, SubjectTypes::STREET);
+        } elseif (isset($this->data['selected_city'])) {
+            $result = [($this->getQuery())->from('city')->where(['id' => $this->data['selected_city']['id']])->one()];
+            $result = $this->addFullSocr($result, SubjectTypes::CITY);
+        } elseif (isset($this->data['selected_district'])) {
+            $result = [($this->getQuery())->from('district')->where(['id' => $this->data['selected_district']['id']])->one()];
+            $result = $this->addFullSocr($result, SubjectTypes::DISTRICT);
+        } elseif (isset($this->data['selected_area'])) {
+            $result = [($this->getQuery())->from('area')->where(['id' => $this->data['selected_area']['id']])->one()];
+            $result = $this->addFullSocr($result, SubjectTypes::AREA);
         } else {
             $result = [];
-            if (isset($this->data['get_full_response'])) {
-                $this->get_minimum_info = false;
-                if (isset($this->data['selected_house'])) {
-                    if (isset($this->data['selected_street'])) {
-                        $string = mb_strtolower($this->data['selected_house']);
-                        $result = ($this->getQuery())->from('house')
-                            ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_street'], SubjectTypes::STREET), false])
-                            ->andWhere(['or',
-                                ['like', 'NAME', $string . ',%', false],
-                                ['like', 'NAME', '%,' . $string, false],
-                                ['like', 'NAME', '%,' . $string . ',%', false]])
-                            ->all();
-                        $result = $this->addFullSocr(array_map(function ($item) use ($string) {
-                            $item['NAME'] = $string;
-                            return $item;
-                        }, $result), SubjectTypes::HOUSE);
-                    } else {
-                        $result = [];
-                    }
-                } elseif (isset($this->data['selected_street'])) {
-                    $result = [($this->getQuery())->from('street')->where(['id' => $this->data['selected_street']['id']])->one()];
-                    $result = $this->addFullSocr($result, SubjectTypes::STREET);
-                } elseif (isset($this->data['selected_city'])) {
-                    $result = [($this->getQuery())->from('city')->where(['id' => $this->data['selected_city']['id']])->one()];
-                    $result = $this->addFullSocr($result, SubjectTypes::CITY);
-                } elseif (isset($this->data['selected_district'])) {
-                    $result = [($this->getQuery())->from('district')->where(['id' => $this->data['selected_district']['id']])->one()];
-                    $result = $this->addFullSocr($result, SubjectTypes::DISTRICT);
-                } elseif (isset($this->data['selected_area'])) {
-                    $result = [($this->getQuery())->from('area')->where(['id' => $this->data['selected_area']['id']])->one()];
-                    $result = $this->addFullSocr($result, SubjectTypes::AREA);
-                } else {
-                    $result = [];
-                }
-                $result = $this->buildNameChain($result);
-
-            } else {
-                if (isset($this->data['selected_city'])) {
-                    $result['street'] = $this->addMatchProp(($this->getQuery())->from('street')
-                        ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_city'], SubjectTypes::CITY), false])->all());
-                }
-                if (isset($this->data['selected_district'])) {
-
-                    if (!isset($result['street'])) {
-                        $result['street'] = $this->addMatchProp(($this->getQuery())->from('street')
-                            ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_district'], SubjectTypes::DISTRICT), false])->all());
-                    }
-                    if (!isset($result['city'])) {
-                        $result['city'] = $this->addMatchProp(($this->getQuery())->from('city')
-                            ->where(['!=', 'SOCR', 'тер'])
-                            ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_district'], SubjectTypes::DISTRICT), false])->all());
-                    }
-                }
-                if (isset($this->data['selected_area'])) {
-                    if (!isset($result['city'])) {
-                        $result['city'] = $this->addMatchProp(($this->getQuery())->from('city')
-                            ->where(['!=', 'SOCR', 'тер'])
-                            ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_area'], SubjectTypes::AREA), false])->all());
-                    }
-                    if (!isset($result['district'])) {
-                        $result['district'] = $this->addMatchProp(($this->getQuery())->from('district')
-                            ->where(['not in', 'SOCR', ['тер', 'п']])
-                            ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_area'], SubjectTypes::AREA), false])->all());
-                    }
-                }
-            }
-            return $result;
         }
+        $result = $this->buildNameChain($result);
+        return $result;
+
+    }
+
+    public function toDoSearch()
+    {
+
+        $result = [];
+
+        if (isset($this->data['selected_city'])) {
+            $result['street'] = $this->addMatchProp(($this->getQuery())->from('street')
+                ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_city'], SubjectTypes::CITY), false])->all());
+        }
+        if (isset($this->data['selected_district'])) {
+
+            if (!isset($result['street'])) {
+                $result['street'] = $this->addMatchProp(($this->getQuery())->from('street')
+                    ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_district'], SubjectTypes::DISTRICT), false])->all());
+            }
+            if (!isset($result['city'])) {
+                $result['city'] = $this->addMatchProp(($this->getQuery())->from('city')
+                    ->where(['!=', 'SOCR', 'тер'])
+                    ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_district'], SubjectTypes::DISTRICT), false])->all());
+            }
+        }
+        if (isset($this->data['selected_area'])) {
+            if (!isset($result['city'])) {
+                $result['city'] = $this->addMatchProp(($this->getQuery())->from('city')
+                    ->where(['!=', 'SOCR', 'тер'])
+                    ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_area'], SubjectTypes::AREA), false])->all());
+            }
+            if (!isset($result['district'])) {
+                $result['district'] = $this->addMatchProp(($this->getQuery())->from('district')
+                    ->where(['not in', 'SOCR', ['тер', 'п']])
+                    ->andWhere(['like', 'CODE', $this->getCodeSlice($this->data['selected_area'], SubjectTypes::AREA), false])->all());
+            }
+        }
+        return $result;
+    }
+
+    public function getCheckHouseExistence()
+    {
+        if ((!isset($this->data['selected_street']) && !isset($this->data['selected_city'])) || !isset($this->data['checking_house'])) {
+            return false;
+        }
+        $string = mb_strtolower($this->data['checking_house']);
+        $slice = isset($this->data['selected_street']) ? $this->getCodeSlice($this->data['selected_street'], SubjectTypes::STREET) : $this->getCodeSlice($this->data['selected_city'], SubjectTypes::CITY);
+        return (new Query())->from('house')
+                ->where(['like', 'CODE', $slice, false])
+                ->andWhere(['or',
+                    ['like', 'NAME', $string . ',%', false],
+                    ['like', 'NAME', '%,' . $string, false],
+                    ['like', 'NAME', '%,' . $string . ',%', false]])
+                ->count() != 0;
     }
 
     private function addMatchProp(array $items): array

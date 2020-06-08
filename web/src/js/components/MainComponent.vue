@@ -30,7 +30,7 @@
             <form-group-component
                     @focus-changed="changeFocus"
                     :focused-block="focusedBlock"
-                    :previous-done="selected.area!==undefined"
+                    :previous-done="true"
                     error-message="Выберите область"
                     v-model="city"
                     @need-to-recalc-variants="selectVariants"
@@ -56,8 +56,8 @@
             <form-group-component
                     @focus-changed="changeFocus"
                     :focused-block="focusedBlock"
-                    :previous-done="selected.street!==undefined"
-                    error-message="Выберите улицу"
+                    :previous-done="(selected.street!==undefined||selected.city!==undefined)&&houseFound"
+                    :error-message="(selected.street!==undefined||selected.city!==undefined)?'Дом не найден':'Выберите улицу или город'"
                     v-model="house"
                     :selected-value="{}"
                     block-name="house"
@@ -82,7 +82,7 @@
     import LoadingSpinner from "@/js/components/LoadingSpinner";
     import FormGroupComponent from "@/js/components/FormGroupComponent";
     import ResultsMainPresenter from "@/js/components/ResultsMainPresenter";
-    import {ajaxUrl} from "@/js/config";
+    import {checkHouseUrl, fullRequestUrl, initUrl, searchUrl} from "@/js/config";
 
     export default {
         name: "MainComponent",
@@ -96,6 +96,7 @@
                 city: '',
                 street: '',
                 house: '',
+                houseFound: true,
                 variants: {
                     area: [],
                     district: [],
@@ -110,9 +111,11 @@
                     street: undefined,
                     house: undefined,
                 },
+                bigCities: [],
                 waiting_for_response: false,
                 presenting_results: false,
                 dataToPresent: [],
+                isCooldown: false
             }
         },
         async mounted() {
@@ -120,11 +123,13 @@
                 this.focusedBlock = ''
             })
             let data = {data: {}}
-            let fetchedData = (await this.sendRequest(data))
+            let fetchedData = (await this.sendRequest(data, initUrl))
             if (fetchedData.errors) {
                 this.presenting_results = false
             } else {
-                this.variants.area = fetchedData
+                this.variants.area = fetchedData.area
+                this.variants.city = fetchedData.city
+                this.bigCities = fetchedData.city
             }
         },
         watch: {
@@ -139,6 +144,8 @@
                     this.city = '';
                     this.street = '';
                     this.house = '';
+                    this.variants.city = this.bigCities
+                    this.houseFound = true
                 }
             },
             district(newVal, oldVal) {
@@ -150,6 +157,8 @@
                     this.city = '';
                     this.street = '';
                     this.house = '';
+                    this.variants.city = this.bigCities
+                    this.houseFound = true
                 }
             },
             city(newVal, oldVal) {
@@ -159,6 +168,7 @@
                     this.selected.house = undefined
                     this.street = '';
                     this.house = '';
+                    this.houseFound = true
                 }
             },
             street(newVal, oldVal) {
@@ -166,10 +176,35 @@
                     this.selected.street = undefined
                     this.selected.house = undefined
                     this.house = '';
+                    this.houseFound = true
                 }
             },
+            house() {
+                this.checkHouse()
+            }
         },
         methods: {
+            async checkHouse() {
+                if (this.house === '') {
+                    this.houseFound = true
+                }
+                if (this.isCooldown || (!this.selected.street && !this.selected.city) || this.house === '') return;
+                let fetchedData, data
+                data = {
+                    data: {
+                        checking_house: this.house,
+                    }
+                }
+                if (this.selected.street) {
+                    data.data.selected_street = this.selected.street
+                } else {
+                    data.data.selected_city = this.selected.city
+                }
+                fetchedData = (await this.sendRequest(data, checkHouseUrl))
+                this.houseFound = fetchedData
+                this.isCooldown = true;
+                setTimeout(() => this.isCooldown = false, 800);
+            },
             changeFocus(event) {
                 if (this.preventFocusChange) {
                     this.preventFocusChange = false
@@ -227,13 +262,14 @@
                         this.house = '';
                         break
                 }
-                if (!this.selected.area || this.selected.street) {
+                await this.checkHouse()
+                if (!this.selected.area && !this.bigCities.includes(this.selected.city) || this.selected.street) {
                     return
                 }
-                await this.getNewVarians()
+                await this.getNewVariants()
 
             },
-            async getNewVarians() {
+            async getNewVariants() {
                 let fetchedData, data
                 data = {
                     data: {
@@ -246,7 +282,7 @@
                 if (this.selected.city !== undefined) {
                     data.data.selected_city = this.selected.city
                 }
-                fetchedData = (await this.sendRequest(data))
+                fetchedData = (await this.sendRequest(data, searchUrl))
                 if (fetchedData.errors) {
                     this.presenting_results = false
                 } else {
@@ -279,8 +315,8 @@
                     }
                 }
             },
-            async sendRequest(data) {
-                let response = await fetch(ajaxUrl, {
+            async sendRequest(data, url) {
+                let response = await fetch(url, {
                     method: "POST",
                     mode: 'cors',
                     headers: {
@@ -295,7 +331,7 @@
 
             },
             async onSubmitClick() {
-                if (!this.selected.area) {
+                if (!this.selected.area && !this.bigCities.includes(this.selected.city)) {
                     this.focusedBlock = 'area'
                     this.showError = true
                     return
@@ -320,7 +356,7 @@
                 if (this.house !== undefined && this.house !== '') {
                     data.data.selected_house = this.house
                 }
-                let fetchedData = (await this.sendRequest(data))
+                let fetchedData = (await this.sendRequest(data, fullRequestUrl))
                 if (fetchedData.errors) {
                     this.presenting_results = false
                 } else {
@@ -343,7 +379,7 @@
                 this.variants = {
                     area: this.variants.area,
                     district: [],
-                    city: [],
+                    city: this.bigCities,
                     street: [],
                     house: [],
                 };
