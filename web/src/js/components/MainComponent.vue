@@ -201,9 +201,12 @@
                     data.data.selected_city = this.selected.city
                 }
                 fetchedData = (await this.sendRequest(data, checkHouseUrl))
-                this.houseFound = fetchedData
+                if (fetchedData.house_value === this.house) {
+                    this.houseFound = fetchedData.result
+
+                }
                 this.isCooldown = true;
-                setTimeout(() => this.isCooldown = false, 800);
+                setTimeout(() => this.isCooldown = false, 100);
             },
             changeFocus(event) {
                 if (this.preventFocusChange) {

@@ -53,7 +53,7 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
         $result = [];
         $this->get_minimum_info = false;
         if (isset($this->data['selected_house'])) {
-            if (isset($this->data['selected_street'])||isset($this->data['selected_city'])) {
+            if (isset($this->data['selected_street']) || isset($this->data['selected_city'])) {
                 $string = mb_strtolower($this->data['selected_house']);
                 $slice = isset($this->data['selected_street']) ? $this->getCodeSlice($this->data['selected_street'], SubjectTypes::STREET) : $this->getCodeSlice($this->data['selected_city'], SubjectTypes::CITY);
                 $result = ($this->getQuery())->from('house')
@@ -129,17 +129,23 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
     public function getCheckHouseExistence()
     {
         if ((!isset($this->data['selected_street']) && !isset($this->data['selected_city'])) || !isset($this->data['checking_house'])) {
-            return false;
+            return [
+                'result' => false,
+                "house_value" => (isset($this->data['checking_house']) ? $this->data['checking_house'] : '')
+            ];
         }
         $string = mb_strtolower($this->data['checking_house']);
         $slice = isset($this->data['selected_street']) ? $this->getCodeSlice($this->data['selected_street'], SubjectTypes::STREET) : $this->getCodeSlice($this->data['selected_city'], SubjectTypes::CITY);
-        return (new Query())->from('house')
-                ->where(['like', 'CODE', $slice, false])
-                ->andWhere(['or',
-                    ['like', 'NAME', $string . ',%', false],
-                    ['like', 'NAME', '%,' . $string, false],
-                    ['like', 'NAME', '%,' . $string . ',%', false]])
-                ->count() != 0;
+        return [
+            'result' => (new Query())->from('house')
+                    ->where(['like', 'CODE', $slice, false])
+                    ->andWhere(['or',
+                        ['like', 'NAME', $string . ',%', false],
+                        ['like', 'NAME', '%,' . $string, false],
+                        ['like', 'NAME', '%,' . $string . ',%', false]])
+                    ->count() != 0,
+            "house_value" => $this->data['checking_house']
+        ];
     }
 
     private function addMatchProp(array $items): array
