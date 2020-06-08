@@ -177,17 +177,23 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
         $chain = '';
         if (isset($this->data['selected_area']) && (isset($this->data['selected_district']) || isset($this->data['selected_city']) || isset($this->data['selected_street']) || isset($this->data['selected_house']))) {
             if (!in_array($this->data['selected_area']['NAME'], $this->big_cities)) {
-                $chain .= "{$this->data['selected_area']['SOCR']} {$this->data['selected_area']['NAME']}";
+                if ($this->data['selected_area']['SOCR']==='край'){
+                    $chain .= "{$this->data['selected_area']['NAME']} {$this->data['selected_area']['SOCR']}";
+
+                }else{
+                    $chain .= "{$this->data['selected_area']['SOCR']} {$this->data['selected_area']['NAME']}";
+
+                }
             }
         }
         if (isset($this->data['selected_district']) && (isset($this->data['selected_city']) || isset($this->data['selected_street']) || isset($this->data['selected_house']))) {
-            $chain .= ($chain ? " -> " : '') . "{$this->data['selected_district']['SOCR']} {$this->data['selected_district']['NAME']}";
+            $chain .= ($chain ? ", " : '') . "{$this->data['selected_district']['SOCR']} {$this->data['selected_district']['NAME']}";
         }
         if (isset($this->data['selected_city']) && (isset($this->data['selected_street']) || isset($this->data['selected_house']))) {
-            $chain .= ($chain ? " -> " : '') . "{$this->data['selected_city']['SOCR']} {$this->data['selected_city']['NAME']}";
+            $chain .= ($chain ? ", " : '') . "{$this->data['selected_city']['SOCR']} {$this->data['selected_city']['NAME']}";
         }
         if (isset($this->data['selected_street']) && (isset($this->data['selected_house']))) {
-            $chain .= ($chain ? " -> " : '') . "{$this->data['selected_street']['SOCR']} {$this->data['selected_street']['NAME']}";
+            $chain .= ($chain ? ", " : '') . "{$this->data['selected_street']['SOCR']} {$this->data['selected_street']['NAME']}";
         }
         foreach ($array_with_selected_items as &$item) {
             $item['NAME_CHAIN'] = $chain;

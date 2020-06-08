@@ -180,14 +180,12 @@
                 }
             },
             house() {
+                this.houseFound = true
                 this.checkHouse()
             }
         },
         methods: {
             async checkHouse() {
-                if (this.house === '') {
-                    this.houseFound = true
-                }
                 if (this.isCooldown || (!this.selected.street && !this.selected.city) || this.house === '') return;
                 let fetchedData, data
                 data = {
