@@ -13,7 +13,8 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
     private array $big_cities = [
         'Москва',
         'Севастополь',
-        'Санкт-Петербург'
+        'Санкт-Петербург',
+        'Байконур'
     ];
 
     public function rules()
@@ -103,7 +104,7 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
 
             if (!isset($result['street'])) {
                 $result['street'] = $this->addMatchProp(($this->getQuery())->from('street')
-                    ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_district'], SubjectTypes::DISTRICT), false])->all());
+                    ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_district'], SubjectTypes::CITY), false])->all());
             }
             if (!isset($result['city'])) {
                 $result['city'] = $this->addMatchProp(($this->getQuery())->from('city')
@@ -112,6 +113,10 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
             }
         }
         if (isset($this->data['selected_area'])) {
+            if (!isset($result['street'])) {
+                $result['street'] = $this->addMatchProp(($this->getQuery())->from('street')
+                    ->where(['like', 'CODE', $this->getCodeSlice($this->data['selected_area'], SubjectTypes::CITY), false])->all());
+            }
             if (!isset($result['city'])) {
                 $result['city'] = $this->addMatchProp(($this->getQuery())->from('city')
                     ->where(['!=', 'SOCR', 'тер'])
@@ -177,10 +182,10 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
         $chain = '';
         if (isset($this->data['selected_area']) && (isset($this->data['selected_district']) || isset($this->data['selected_city']) || isset($this->data['selected_street']) || isset($this->data['selected_house']))) {
             if (!in_array($this->data['selected_area']['NAME'], $this->big_cities)) {
-                if ($this->data['selected_area']['SOCR']==='край'){
+                if ($this->data['selected_area']['SOCR'] === 'край') {
                     $chain .= "{$this->data['selected_area']['NAME']} {$this->data['selected_area']['SOCR']}";
 
-                }else{
+                } else {
                     $chain .= "{$this->data['selected_area']['SOCR']} {$this->data['selected_area']['NAME']}";
 
                 }
@@ -212,7 +217,7 @@ class SearchModelSQL extends \yii\base\Model implements ISearcher
                 $slice_length = 2;
                 break;
             case SubjectTypes::DISTRICT:
-                $slice_length = 4;
+                $slice_length = 5;
                 break;
             case SubjectTypes::CITY:
             case SubjectTypes::SMALL_TER:

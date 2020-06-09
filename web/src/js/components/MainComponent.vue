@@ -43,8 +43,8 @@
             <form-group-component
                     @focus-changed="changeFocus"
                     :focused-block="focusedBlock"
-                    :previous-done="selected.district!==undefined||selected.city!==undefined"
-                    error-message="Выберите район или город"
+                    :previous-done="selected.district!==undefined||selected.city!==undefined||selected.area!==undefined"
+                    error-message="Выберите субъект рангом выше"
                     v-model="street"
                     @need-to-recalc-variants="selectVariants"
                     :variants-to-choose="variants.street"
